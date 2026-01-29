@@ -1,0 +1,7 @@
+# Robots.txt for Metal Maniacs FTC Robotics Team Website
+
+User-agent: *
+Allow: /
+
+# Sitemap location (create this file if you want better SEO)
+# Sitemap: https://berniecodez.github.io/Metal-Maniacs-Website/sitemap.xml
