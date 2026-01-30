@@ -1,4 +1,25 @@
 /* ============================================
+   FONT IMPORTS
+   ============================================ */
+@font-face {
+    font-family: 'mokoto';
+    src: url('/assets/mokoto.regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* ============================================
+   CSS VARIABLES
+   ============================================ */
+:root {
+    /* Display Font - Change this value to switch between fonts:
+       - 'mokoto' (current)
+       - 'Orbitron' (to revert back) */
+    /* --display-font: 'mokoto', sans-serif; */
+    --display-font: 'Orbitron', sans-serif;
+}
+
+/* ============================================
    GENERAL RESET & BASE STYLES
    ============================================ */
 * {
@@ -25,7 +46,7 @@ body {
 }
 
 h1, h2, h3, .logo {
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--display-font);
     text-transform: uppercase;
     letter-spacing: 2px;
     color: #ff0000;
@@ -178,7 +199,7 @@ nav ul li a:hover {
 
 /* .metal-title {
     font-size: 10rem;
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--display-font);
     letter-spacing: 12px;
     color: #000;
     display: flex;
@@ -212,7 +233,7 @@ nav ul li a:hover {
 .btn {
     padding: 12px 30px;
     text-decoration: none;
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--display-font);
     font-weight: bold;
     border-radius: 0px;
     margin: 10px;
@@ -677,7 +698,7 @@ nav ul li a:hover {
 
 .footer-section h3,
 .footer-section h4 {
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--display-font);
     margin-bottom: 1rem;
     color: #fff;
 }
@@ -905,7 +926,7 @@ nav ul li a:hover {
 .spec-item h4 {
     min-width: 150px;
     color: #ff0000;
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--display-font);
 }
 
 .spec-item p {
@@ -1113,7 +1134,7 @@ nav ul li a:hover {
 .achievement-text h4 {
     color: #fff;
     margin-bottom: 0.5rem;
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--display-font);
 }
 
 .achievement-text p {
@@ -1271,7 +1292,7 @@ nav ul li a:hover {
     color: #ff0000;
     font-weight: bold;
     margin-bottom: 2rem;
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--display-font);
 }
 
 .tier-benefits {
@@ -1338,7 +1359,7 @@ nav ul li a:hover {
 .contact-method h4 {
     color: #fff;
     margin-bottom: 0.5rem;
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--display-font);
 }
 
 .contact-method p {
@@ -1397,7 +1418,7 @@ nav ul li a:hover {
 }
 
 .tech-card h3 {
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--display-font);
     font-size: 2rem;
     margin-bottom: 1.5rem;
     text-transform: uppercase;
@@ -1414,7 +1435,7 @@ nav ul li a:hover {
 
 .tech-content h4 {
     color: #fff;
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--display-font);
     font-size: 1.2rem;
     margin-top: 1.5rem;
     margin-bottom: 1rem;
@@ -1539,7 +1560,7 @@ nav ul li a:hover {
 }
 
 .program-card h3 {
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--display-font);
     color: #fff;
     font-size: 1.5rem;
     margin-bottom: 1rem;
@@ -1619,7 +1640,7 @@ nav ul li a:hover {
 
 .story-author strong {
     color: #fff;
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--display-font);
 }
 
 .story-author span {
@@ -1658,7 +1679,7 @@ nav ul li a:hover {
     color: #fff;
     padding: 1rem;
     text-align: center;
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--display-font);
     text-transform: uppercase;
     letter-spacing: 1px;
     font-size: 0.9rem;
