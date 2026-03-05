@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — Competition Host</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/tools/competition/competition.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+<header class="comp-header">
+  <a href="/tools" class="comp-header-logo">METAL <span>MANIACS</span></a>
+  <div class="comp-header-title"><i class="fas fa-trophy"></i> COMPETITION HOST</div>
+  <div class="comp-header-right"></div>
+</header>
+
+<div class="auth-page-wrap">
+  <div class="auth-card">
+    <div class="auth-card-icon"><i class="fas fa-trophy"></i></div>
+    <h1 class="auth-card-title">COMPETITION HOST</h1>
+    <p class="auth-card-sub">Sign in or create an account to manage FTC competitions.</p>
+
+    <div id="step-email" class="auth-step active">
+      <div class="form-field">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="cinput" id="email-input" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="auth-err" id="email-err"></div>
+      <button class="cbtn cbtn-red auth-submit-btn" id="email-btn" onclick="checkEmail()">
+        <i class="fas fa-arrow-right"></i> Continue
+      </button>
+    </div>
+
+    <div id="step-name" class="auth-step">
+      <p class="auth-card-sub" style="margin-bottom:1rem;">
+        <i class="fas fa-user-plus" style="color:var(--red);"></i>
+        Looks like you're new here — enter your name to create an account.
+      </p>
+      <div class="form-field">
+        <label class="form-label">Your Name</label>
+        <input type="text" class="cinput" id="name-input" placeholder="e.g. Alice Chen" autocomplete="name">
+      </div>
+      <div class="auth-err" id="name-err"></div>
+      <button class="cbtn cbtn-red auth-submit-btn" id="name-btn" onclick="submitWithName()">
+        <i class="fas fa-envelope"></i> Send Magic Link
+      </button>
+      <button class="cbtn cbtn-ghost" style="margin-top:.5rem;width:100%;justify-content:center;" onclick="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+    </div>
+
+    <div id="step-sent" class="auth-step">
+      <div class="auth-success-icon"><i class="fas fa-envelope-open-text"></i></div>
+      <h2 style="font-family:'Orbitron',sans-serif;font-size:1rem;letter-spacing:2px;color:#fff;margin:.5rem 0;">CHECK YOUR EMAIL</h2>
+      <p class="auth-card-sub" id="sent-msg">We sent a sign-in link to your email. Click it to continue — it expires in 15 minutes.</p>
+      <button class="cbtn cbtn-ghost" style="margin-top:1rem;width:100%;justify-content:center;" onclick="resetForm()">
+        <i class="fas fa-redo"></i> Try a different email
+      </button>
+    </div>
+  </div>
+
+  <div class="auth-footer">
+    <a href="/tools">← Back to Tools</a>
+  </div>
+</div>
+
+<script src="/tools/competition/auth.js"></script>
+<script>
+  // If already logged in, redirect
+  window.addEventListener('DOMContentLoaded', () => {
+    if (getCurrentUser()) {
+      const params = new URLSearchParams(window.location.search);
+      window.location.replace(params.get('redirect') || '/tools/competition/dashboard');
+    }
+
+    // Allow Enter to submit
+    document.getElementById('email-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkEmail(); });
+    document.getElementById('name-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitWithName(); });
+  });
+
+  function showStep(id) {
+    document.querySelectorAll('.auth-step').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function showErr(elId, msg) {
+    const el = document.getElementById(elId);
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+  function clearErr(elId) {
+    const el = document.getElementById(elId);
+    el.textContent = '';
+    el.classList.remove('show');
+  }
+
+  function getRedirect() {
+    return new URLSearchParams(window.location.search).get('redirect') || '/tools/competition/dashboard';
+  }
+
+  async function checkEmail() {
+    clearErr('email-err');
+    const email = document.getElementById('email-input').value.trim();
+    if (!email || !email.includes('@')) { showErr('email-err', 'Enter a valid email address.'); return; }
+
+    const btn = document.getElementById('email-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+
+    const res = await fetch('/api/auth/magic-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      document.getElementById('sent-msg').textContent = `We sent a sign-in link to ${email}. Click it to continue — it expires in 15 minutes.`;
+      showStep('step-sent');
+    } else if (data.needsName) {
+      showStep('step-name');
+    } else {
+      showErr('email-err', data.error || 'Something went wrong. Please try again.');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-arrow-right"></i> Continue';
+  }
+
+  async function submitWithName() {
+    clearErr('name-err');
+    const email = document.getElementById('email-input').value.trim();
+    const name  = document.getElementById('name-input').value.trim();
+    if (!name) { showErr('name-err', 'Name is required.'); return; }
+
+    const btn = document.getElementById('name-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+    const res = await fetch('/api/auth/magic-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      document.getElementById('sent-msg').textContent = `We sent a sign-in link to ${email}. Click it to continue — it expires in 15 minutes.`;
+      showStep('step-sent');
+    } else {
+      showErr('name-err', data.error || 'Something went wrong. Please try again.');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-envelope"></i> Send Magic Link';
+  }
+
+  function goBack() { showStep('step-email'); }
+
+  function resetForm() {
+    document.getElementById('email-input').value = '';
+    document.getElementById('name-input').value  = '';
+    showStep('step-email');
+  }
+</script>
+</body>
+</html>

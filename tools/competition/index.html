@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competition Host</title>
+</head>
+<body>
+<script src="/tools/competition/auth.js"></script>
+<script>
+  const user = getCurrentUser();
+  window.location.replace(user ? '/tools/competition/dashboard' : '/tools/competition/login');
+</script>
+</body>
+</html>

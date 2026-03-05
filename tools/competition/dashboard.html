@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Competition Host</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/tools/competition/competition.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+<header class="comp-header">
+  <a href="/tools" class="comp-header-logo">METAL <span>MANIACS</span></a>
+  <div class="comp-header-title"><i class="fas fa-trophy"></i> COMPETITION HOST</div>
+  <div class="comp-header-right">
+    <div id="user-pill" class="comp-auth-pill member" style="cursor:default;">
+      <div class="dot"></div>
+      <span id="user-pill-label">…</span>
+    </div>
+  </div>
+</header>
+
+<div class="dashboard-wrap">
+  <div class="dashboard-top">
+    <div>
+      <h1 class="dash-title">MY EVENTS</h1>
+      <p id="dash-subtitle" class="dash-subtitle"></p>
+    </div>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;">
+      <a href="/tools/competition/join" class="cbtn cbtn-ghost"><i class="fas fa-link"></i> Join via Code</a>
+      <a href="/tools/competition/new"  class="cbtn cbtn-red"><i class="fas fa-plus"></i> New Event</a>
+      <button class="cbtn cbtn-ghost" onclick="signOutDash()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+    </div>
+  </div>
+
+  <div id="events-loading" class="dash-loading"><i class="fas fa-spinner fa-spin"></i> Loading events…</div>
+  <div id="events-empty"   class="dash-empty" style="display:none;">
+    <i class="fas fa-calendar-xmark"></i>
+    <h3>No events yet</h3>
+    <p>Create your first competition or accept an invitation to join one.</p>
+    <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;">
+      <a href="/tools/competition/new"  class="cbtn cbtn-red"><i class="fas fa-plus"></i> Create Event</a>
+      <a href="/tools/competition/join" class="cbtn cbtn-ghost"><i class="fas fa-link"></i> Join with Code</a>
+    </div>
+  </div>
+
+  <div id="events-grid" class="events-grid" style="display:none;"></div>
+</div>
+
+<script src="/tools/competition/auth.js"></script>
+<script>
+  let currentUser = null;
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    currentUser = requireAuth();
+    if (!currentUser) return;
+
+    document.getElementById('user-pill-label').textContent = currentUser.name;
+    document.getElementById('dash-subtitle').textContent   = `Welcome back, ${currentUser.name}`;
+
+    await loadEvents();
+  });
+
+  async function loadEvents() {
+    const res = await apiFetch('/api/events');
+    if (!res) return;
+    const events = await res.json();
+
+    document.getElementById('events-loading').style.display = 'none';
+
+    if (!events.length) {
+      document.getElementById('events-empty').style.display = 'flex';
+      return;
+    }
+
+    document.getElementById('events-grid').style.display = 'grid';
+    document.getElementById('events-grid').innerHTML = events.map(e => renderEventCard(e)).join('');
+  }
+
+  function renderEventCard(e) {
+    const isOwner  = e.my_role === 'owner';
+    const roleBadge = isOwner
+      ? '<span class="badge badge-red"><i class="fas fa-crown"></i> Owner</span>'
+      : '<span class="badge badge-blue"><i class="fas fa-user"></i> Member</span>';
+
+    const dateStr = e.event_date
+      ? `<span><i class="fas fa-calendar"></i> ${escHtml(e.event_date)}</span>` : '';
+    const locStr  = e.location
+      ? `<span><i class="fas fa-location-dot"></i> ${escHtml(e.location)}</span>` : '';
+
+    return `
+      <div class="event-card" onclick="window.location='/tools/competition/event/${e.id}'">
+        <div class="event-card-top">
+          <div class="event-card-badges">${roleBadge}</div>
+          ${isOwner ? `<button class="cbtn cbtn-danger cbtn-sm event-delete-btn" onclick="deleteEvent('${e.id}',event)" title="Delete event"><i class="fas fa-trash"></i></button>` : ''}
+        </div>
+        <div class="event-card-name">${escHtml(e.name)}</div>
+        <div class="event-card-team"><i class="fas fa-users"></i> ${escHtml(e.hosting_team)}</div>
+        ${e.description ? `<div class="event-card-desc">${escHtml(e.description)}</div>` : ''}
+        <div class="event-card-meta">
+          ${dateStr}${locStr}
+          <span><i class="fas fa-users-line"></i> ${e.team_count} teams</span>
+          <span><i class="fas fa-flag-checkered"></i> ${e.match_count} matches</span>
+        </div>
+        <div class="event-card-footer">
+          <span class="event-card-code"><i class="fas fa-key"></i> ${escHtml(e.invite_code)}</span>
+          <span style="color:var(--text-muted);font-size:.7rem;">OPEN →</span>
+        </div>
+      </div>`;
+  }
+
+  async function deleteEvent(id, ev) {
+    ev.stopPropagation();
+    if (!confirm('Delete this event and all its data? This cannot be undone.')) return;
+    const res = await apiFetch('/api/events/' + id, { method: 'DELETE' });
+    if (res?.ok) await loadEvents();
+  }
+
+  function signOutDash() {
+    clearAuth();
+    window.location.replace('/tools/competition/login');
+  }
+</script>
+</body>
+</html>

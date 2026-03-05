@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competition Viewer</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/tools/competition/competition.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    .guest-banner {
+      background: linear-gradient(90deg, #1a1a1a, #222);
+      border-bottom: 1px solid var(--border);
+      padding: .45rem 3%;
+      text-align: center;
+      font-size: .78rem;
+      color: var(--text-muted);
+      letter-spacing: .5px;
+    }
+    .guest-banner a { color: var(--red); text-decoration: none; }
+    .guest-banner a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="comp-header">
+  <a href="/" class="comp-header-logo">METAL <span>MANIACS</span></a>
+  <div class="comp-header-title" id="header-event-name">
+    <i class="fas fa-trophy"></i> LOADING…
+  </div>
+  <div class="comp-header-right" style="gap:.75rem;">
+    <span class="badge badge-gray" style="font-size:.7rem;letter-spacing:1px;"><i class="fas fa-eye"></i> GUEST VIEW</span>
+    <a href="/tools/competition/login" class="cbtn cbtn-ghost cbtn-sm"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+  </div>
+</header>
+
+<!-- GUEST NOTICE STRIP -->
+<div class="guest-banner">
+  <i class="fas fa-eye"></i> You are viewing this event as a guest. Some sections are hidden. &nbsp;|&nbsp;
+  <a href="/tools/competition/join"><i class="fas fa-user-plus"></i> Join as a member</a> to access the full dashboard.
+</div>
+
+<!-- STATUS BAR -->
+<div id="status-bar">
+  <div class="stat-pill"><i class="fas fa-clock"></i> <span>Time</span> <strong id="clock-display">--:--</strong></div>
+  <div class="stat-pill"><i class="fas fa-users"></i> <span>Teams</span> <strong id="teams-display">0</strong></div>
+  <div class="stat-pill"><i class="fas fa-flag-checkered"></i> <span>Matches</span> <strong id="matches-display">0</strong></div>
+  <div class="stat-pill" id="hosting-pill" style="margin-left:auto;">
+    <i class="fas fa-shield-halved" style="color:var(--red);"></i>
+    <span id="hosting-team-label" style="color:var(--text-muted);font-size:.75rem;"></span>
+  </div>
+</div>
+
+<!-- TABS (guests only see Queue, Map, Leaderboard) -->
+<nav id="comp-nav">
+  <button class="comp-tab active" data-tab="queue"       onclick="switchTab('queue',this)"><i class="fas fa-list-ol"></i> Queue</button>
+  <button class="comp-tab"        data-tab="map"         onclick="switchTab('map',this)"><i class="fas fa-map-marked-alt"></i> Map</button>
+  <button class="comp-tab"        data-tab="leaderboard" onclick="switchTab('leaderboard',this)"><i class="fas fa-ranking-star"></i> Leaderboard</button>
+</nav>
+
+<!-- PANELS -->
+<div id="comp-body">
+
+  <!-- QUEUE (read-only) -->
+  <div id="panel-queue" class="tab-panel active">
+    <div class="section-toolbar">
+      <h2 class="comp-section-header" style="margin:0;border:none;padding:0;">MATCH QUEUE</h2>
+    </div>
+    <div style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+      <div class="comp-card" style="flex:1;min-width:100px;text-align:center;padding:.75rem;">
+        <div style="font-size:.65rem;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:.25rem;font-family:'Orbitron',sans-serif;">NEEDS QUEUE</div>
+        <div id="q-needs-count"    style="font-family:'Orbitron',sans-serif;font-size:1.5rem;color:var(--orange);">0</div>
+      </div>
+      <div class="comp-card" style="flex:1;min-width:100px;text-align:center;padding:.75rem;">
+        <div style="font-size:.65rem;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:.25rem;font-family:'Orbitron',sans-serif;">IN QUEUE</div>
+        <div id="q-inqueue-count"  style="font-family:'Orbitron',sans-serif;font-size:1.5rem;color:var(--blue);">0</div>
+      </div>
+      <div class="comp-card" style="flex:1;min-width:100px;text-align:center;padding:.75rem;">
+        <div style="font-size:.65rem;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:.25rem;font-family:'Orbitron',sans-serif;">CHECKED IN</div>
+        <div id="q-checkedin-count" style="font-family:'Orbitron',sans-serif;font-size:1.5rem;color:var(--green);">0</div>
+      </div>
+    </div>
+    <div id="queue-list" class="queue-grid"></div>
+  </div>
+
+  <!-- MAP (read-only) -->
+  <div id="panel-map" class="tab-panel">
+    <div class="section-toolbar">
+      <h2 class="comp-section-header" style="margin:0;border:none;padding:0;">VENUE MAP</h2>
+    </div>
+    <div id="map-container" style="cursor:default;">
+      <img id="map-image" src="" alt="" style="display:none;">
+      <div id="map-empty-state">
+        <i class="fas fa-map"></i>
+        <p style="color:var(--text-muted);font-size:.9rem;">No map uploaded yet.</p>
+      </div>
+      <div id="map-pins-layer" style="position:absolute;inset:0;pointer-events:none;"></div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD (read-only) -->
+  <div id="panel-leaderboard" class="tab-panel">
+    <div class="section-toolbar">
+      <h2 class="comp-section-header" style="margin:0;border:none;padding:0;">LEADERBOARD</h2>
+      <button class="cbtn cbtn-blue cbtn-sm" onclick="openFullscreen()"><i class="fas fa-expand"></i> Fullscreen</button>
+    </div>
+    <div id="leaderboard-wrapper">
+      <div class="lb-header-row">
+        <div style="text-align:center;">#</div>
+        <div>TEAM</div>
+        <div style="text-align:center;">HIGH SCORE</div>
+        <div class="lb-wins-hd"   style="text-align:center;">W</div>
+        <div class="lb-losses-hd" style="text-align:center;">L</div>
+        <div class="lb-rp-hd"     style="text-align:center;">RP</div>
+      </div>
+      <div class="lb-scroll-window" id="lb-scroll-window">
+        <div class="lb-track" id="lb-track"></div>
+      </div>
+      <div class="lb-actions-bar">
+        <button class="cbtn cbtn-ghost" onclick="toggleLbScroll()" id="scroll-toggle-btn"><i class="fas fa-play"></i> Start Scroll</button>
+        <label class="form-label" style="margin:0;display:flex;align-items:center;gap:.5rem;color:var(--text-muted);font-size:.75rem;">
+          Speed: <input type="range" id="scroll-speed" min="1" max="10" value="4" style="width:80px;" oninput="updateScrollSpeed()">
+        </label>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /comp-body -->
+
+
+<!-- FULLSCREEN LEADERBOARD -->
+<div id="fullscreen-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:#0a0a0a;display:none;flex-direction:column;">
+  <div class="fs-title">
+    <h1><i class="fas fa-trophy" style="margin-right:.5rem;"></i> LEADERBOARD</h1>
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <div id="fs-event-name" style="font-family:'Orbitron',sans-serif;font-size:.85rem;color:var(--text-muted);"></div>
+      <div id="fs-clock" style="font-family:'Orbitron',sans-serif;font-size:1.2rem;color:var(--yellow);"></div>
+      <button class="cbtn cbtn-ghost" onclick="closeFullscreen()"><i class="fas fa-compress"></i> Exit</button>
+    </div>
+  </div>
+  <div id="fs-lb-header" class="lb-header-row">
+    <div style="text-align:center;">#</div><div>TEAM</div>
+    <div style="text-align:center;">HIGH SCORE</div>
+    <div class="lb-wins-hd" style="text-align:center;">W</div>
+    <div class="lb-losses-hd" style="text-align:center;">L</div>
+    <div class="lb-rp-hd" style="text-align:center;">RP</div>
+  </div>
+  <div id="fs-lb-content">
+    <div class="lb-track" id="fs-lb-track"></div>
+  </div>
+  <div style="background:#0d0d0d;border-top:1px solid var(--border);padding:.5rem 2%;text-align:center;font-size:.7rem;color:#444;font-family:'Orbitron',sans-serif;letter-spacing:2px;">
+    HOSTED BY <span id="fs-hosting-team"></span> — METAL MANIACS COMPETITION HOST
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const EVENT_ID = window.location.pathname.split('/')[4];
+let eventData = {};
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function safeJSON(str, def) {
+  if (!str) return def;
+  try { return JSON.parse(str); } catch { return def; }
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.comp-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function startClock() {
+  function tick() {
+    const now = new Date();
+    let h = now.getHours(), m = now.getMinutes();
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    const padM = String(m).padStart(2, '0');
+    const txt = `${h}:${padM} ${ap}`;
+    document.getElementById('clock-display').textContent = txt;
+    const fsClock = document.getElementById('fs-clock');
+    if (fsClock) fsClock.textContent = txt;
+  }
+  tick();
+  setInterval(tick, 10000);
+}
+
+// ── Queue (read-only) ──
+const Q_STATUS = {
+  needs_queue: { label: 'Needs Queue', cls: 'q-status-needs' },
+  in_queue:    { label: 'In Queue',    cls: 'q-status-in' },
+  checked_in:  { label: 'Checked In', cls: 'q-status-checked' },
+};
+
+function renderQueue() {
+  const list = eventData.queue || [];
+  const el = document.getElementById('queue-list');
+  document.getElementById('q-needs-count').textContent    = list.filter(t => t.status === 'needs_queue').length;
+  document.getElementById('q-inqueue-count').textContent  = list.filter(t => t.status === 'in_queue').length;
+  document.getElementById('q-checkedin-count').textContent = list.filter(t => t.status === 'checked_in').length;
+  if (!list.length) { el.innerHTML = '<div class="empty-state-small">No teams in queue yet.</div>'; return; }
+  const sorted = [...list].sort((a, b) => {
+    const order = { checked_in: 0, in_queue: 1, needs_queue: 2 };
+    const od = (order[a.status] ?? 3) - (order[b.status] ?? 3);
+    if (od !== 0) return od;
+    return (a.queue_num || 999) - (b.queue_num || 999);
+  });
+  el.innerHTML = sorted.map(t => {
+    const s = Q_STATUS[t.status] || { label: t.status, cls: '' };
+    return `<div class="queue-card ${s.cls}">
+      <div class="queue-card-top">
+        <div class="queue-team-num">${escHtml(t.number || '—')}</div>
+        <div class="queue-team-name">${escHtml(t.name || '')}</div>
+        <div class="queue-badge ${s.cls}">${s.label}</div>
+      </div>
+      <div class="queue-card-meta">
+        ${t.field ? `<span><i class="fas fa-border-all"></i> Field ${escHtml(String(t.field))}</span>` : ''}
+        ${t.queue_num ? `<span><i class="fas fa-hashtag"></i> Queue ${escHtml(String(t.queue_num))}</span>` : ''}
+        ${t.time ? `<span><i class="fas fa-clock"></i> ${escHtml(t.time)}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Map (read-only) ──
+function renderMap() {
+  const img = document.getElementById('map-image');
+  const empty = document.getElementById('map-empty-state');
+  if (eventData.map_image) {
+    img.src = eventData.map_image;
+    img.style.display = 'block';
+    empty.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    empty.style.display = 'flex';
+  }
+  renderMapPins();
+}
+
+function renderMapPins() {
+  const layer = document.getElementById('map-pins-layer');
+  const pins = eventData.map_pins || [];
+  layer.innerHTML = pins.map(p => `
+    <div class="map-pin" style="left:${p.x}%;top:${p.y}%;" title="${escHtml(p.label)}">
+      <i class="fas fa-map-pin" style="color:var(--red);font-size:1.2rem;filter:drop-shadow(0 1px 2px #000);"></i>
+      <div class="map-pin-label">${escHtml(p.label)}</div>
+    </div>`).join('');
+}
+
+// ── Leaderboard (read-only) ──
+let lbScrolling = false;
+let lbScrollInterval = null;
+
+function renderLeaderboard() {
+  const sorted = [...(eventData.leaderboard || [])].sort((a, b) => {
+    const sd = (b.score||0) - (a.score||0);
+    if (sd !== 0) return sd;
+    return (b.wins||0) - (a.wins||0);
+  });
+  const html = sorted.map((t, i) => `
+    <div class="lb-row ${i === 0 ? 'lb-gold' : i === 1 ? 'lb-silver' : i === 2 ? 'lb-bronze' : ''}">
+      <div class="lb-rank">${i + 1}</div>
+      <div class="lb-team-cell">
+        <div class="lb-team-num">${escHtml(t.number || '')}</div>
+        <div class="lb-team-name">${escHtml(t.name || '')}</div>
+      </div>
+      <div class="lb-score">${t.score ?? '—'}</div>
+      <div class="lb-wins">${t.wins ?? '—'}</div>
+      <div class="lb-losses">${t.losses ?? '—'}</div>
+      <div class="lb-rp">${t.rp ?? '—'}</div>
+    </div>`).join('');
+  document.getElementById('lb-track').innerHTML = html || '<div class="empty-state-small">No teams on the leaderboard yet.</div>';
+  const fsTrack = document.getElementById('fs-lb-track');
+  if (fsTrack) fsTrack.innerHTML = html;
+}
+
+function toggleLbScroll() {
+  lbScrolling = !lbScrolling;
+  const btn = document.getElementById('scroll-toggle-btn');
+  if (lbScrolling) {
+    btn.innerHTML = '<i class="fas fa-stop"></i> Stop Scroll';
+    startLbScroll();
+  } else {
+    btn.innerHTML = '<i class="fas fa-play"></i> Start Scroll';
+    clearInterval(lbScrollInterval);
+  }
+}
+
+function updateScrollSpeed() {
+  if (lbScrolling) { clearInterval(lbScrollInterval); startLbScroll(); }
+}
+
+function startLbScroll() {
+  const speed = parseInt(document.getElementById('scroll-speed')?.value || 4, 10);
+  const delay = Math.round(1100 - speed * 100);
+  lbScrollInterval = setInterval(() => {
+    const win = document.getElementById('lb-scroll-window');
+    if (!win) return;
+    const max = win.scrollHeight - win.clientHeight;
+    if (win.scrollTop >= max) win.scrollTop = 0;
+    else win.scrollTop += 40;
+  }, delay);
+}
+
+function openFullscreen() {
+  renderLeaderboard();
+  document.getElementById('fs-event-name').textContent   = eventData.name || '';
+  document.getElementById('fs-hosting-team').textContent = eventData.hosting_team || '';
+  document.getElementById('fullscreen-overlay').style.display = 'flex';
+}
+function closeFullscreen() {
+  document.getElementById('fullscreen-overlay').style.display = 'none';
+}
+
+// ── Refresh every 30 s so guests see live updates ──
+let refreshInterval = null;
+async function loadEvent() {
+  const res = await fetch('/api/events/' + encodeURIComponent(EVENT_ID) + '/public');
+  if (!res.ok) {
+    document.body.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;gap:1rem;font-family:'Orbitron',sans-serif;">
+      <i class="fas fa-triangle-exclamation" style="font-size:3rem;color:#e74c3c;"></i>
+      <h2 style="color:#e74c3c;">Event not found or unavailable.</h2>
+      <a href="/tools/competition" class="cbtn cbtn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>`;
+    return;
+  }
+  const d = await res.json();
+  eventData = {
+    name:        d.name,
+    hosting_team: d.hosting_team,
+    team_count:  d.team_count  || 0,
+    match_count: d.match_count || 0,
+    queue:       safeJSON(d.queue_data,       []),
+    map_image:   d.map_image   || null,
+    map_pins:    safeJSON(d.map_pins,         []),
+    leaderboard: safeJSON(d.leaderboard_data, []),
+  };
+  document.title = escHtml(d.name) + ' — Guest View';
+  document.getElementById('header-event-name').innerHTML = `<i class="fas fa-trophy"></i> ${escHtml(d.name)}`;
+  document.getElementById('hosting-team-label').textContent = 'Hosted by ' + d.hosting_team;
+  document.getElementById('teams-display').textContent  = d.team_count  || 0;
+  document.getElementById('matches-display').textContent = d.match_count || 0;
+  renderQueue();
+  renderMap();
+  renderLeaderboard();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!EVENT_ID) {
+    document.body.innerHTML = '<p style="color:#e74c3c;text-align:center;padding:4rem;">No event specified.</p>';
+    return;
+  }
+  await loadEvent();
+  startClock();
+  refreshInterval = setInterval(loadEvent, 30000);
+});
+</script>
+</body>
+</html>

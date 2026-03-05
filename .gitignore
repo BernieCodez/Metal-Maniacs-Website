@@ -18,6 +18,15 @@ npm-debug.log*
 *.tmp
 .cache/
 
+# Environment variables — never commit these
+.env
+
+# SQLite database
+competition.db
+competition.db-shm
+competition.db-wal
+
 # Build outputs (if you add build process later)
 dist/
 build/
+node_modules/
