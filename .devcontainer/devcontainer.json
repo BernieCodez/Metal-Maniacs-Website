@@ -1,0 +1,9 @@
+{
+    "forwardPorts": [3000],
+    "portsAttributes": {
+      "3000": {
+        "visibility": "public",
+        "label": "Metal Maniacs Website"
+      }
+    }
+  }

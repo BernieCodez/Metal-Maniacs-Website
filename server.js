@@ -9,6 +9,8 @@ const path       = require('path');
 const crypto     = require('crypto');
 const jwt        = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const multer     = require('multer');
+const { PDFParse } = require('pdf-parse');
 const db         = require('./db');
 
 const app  = express();
@@ -132,11 +134,35 @@ app.get('/api/events', authMiddleware, (req, res) => {
 
 // POST /api/events
 app.post('/api/events', authMiddleware, (req, res) => {
-  const { name, hosting_team, description, event_date, location } = req.body;
+  const { name, hosting_team, description, event_date, location, team_id } = req.body;
   if (!name?.trim() || !hosting_team?.trim()) return res.status(400).json({ error: 'Event name and hosting team are required.' });
   const id = uid(), invite_code = crypto.randomBytes(6).toString('hex');
   db.prepare('INSERT INTO events (id, name, hosting_team, description, event_date, location, owner_id, invite_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
     .run(id, name.trim(), hosting_team.trim(), (description||'').trim(), (event_date||'').trim(), (location||'').trim(), req.user.sub, invite_code);
+
+  // Auto-add all members of the linked team as accepted event members
+  if (team_id) {
+    const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(team_id);
+    if (team) {
+      const isTeamOwner = team.owner_id === req.user.sub;
+      const isTeamMember = db.prepare('SELECT 1 FROM team_members WHERE team_id = ? AND user_id = ?').get(team_id, req.user.sub);
+      if (isTeamOwner || isTeamMember) {
+        // Add team owner (if not the event creator)
+        if (team.owner_id !== req.user.sub) {
+          const teamOwner = db.prepare('SELECT * FROM users WHERE id = ?').get(team.owner_id);
+          if (teamOwner) db.prepare(`INSERT OR IGNORE INTO event_members (id, event_id, invited_email, user_id, status, accepted_at) VALUES (?, ?, ?, ?, 'accepted', unixepoch())`).run(uid(), id, teamOwner.email.toLowerCase(), teamOwner.id);
+        }
+        // Add all team members (excluding the event creator)
+        const teamMembers = db.prepare('SELECT tm.user_id, u.email FROM team_members tm JOIN users u ON u.id = tm.user_id WHERE tm.team_id = ?').all(team_id);
+        for (const m of teamMembers) {
+          if (m.user_id !== req.user.sub) {
+            db.prepare(`INSERT OR IGNORE INTO event_members (id, event_id, invited_email, user_id, status, accepted_at) VALUES (?, ?, ?, ?, 'accepted', unixepoch())`).run(uid(), id, m.email.toLowerCase(), m.user_id);
+          }
+        }
+      }
+    }
+  }
+
   const event = db.prepare('SELECT * FROM events WHERE id = ?').get(id);
   res.status(201).json({ ...event, my_role: 'owner', is_owner: true });
 });
@@ -277,6 +303,346 @@ app.delete('/api/events/:id/members/:memberId', authMiddleware, (req, res) => {
   res.json({ ok: true });
 });
 
+// ─── API: Teams ───────────────────────────────────────────────────────────────
+
+// GET /api/teams — list teams the user owns or is a member of
+app.get('/api/teams', authMiddleware, (req, res) => {
+  const userId = req.user.sub;
+  const owned   = db.prepare(`SELECT t.*, 'owner' AS my_role FROM teams t WHERE t.owner_id = ? ORDER BY t.created_at DESC`).all(userId);
+  const membered = db.prepare(`SELECT t.*, tm.role AS my_role FROM teams t JOIN team_members tm ON tm.team_id = t.id WHERE tm.user_id = ? ORDER BY t.created_at DESC`).all(userId);
+  const seen = new Set(owned.map(t => t.id));
+  res.json([...owned, ...membered.filter(t => !seen.has(t.id))]);
+});
+
+// POST /api/teams — create a team
+app.post('/api/teams', authMiddleware, (req, res) => {
+  const { name } = req.body;
+  if (!name?.trim()) return res.status(400).json({ error: 'Team name is required.' });
+  const id = uid(), invite_code = crypto.randomBytes(6).toString('hex');
+  db.prepare('INSERT INTO teams (id, name, owner_id, invite_code) VALUES (?, ?, ?, ?)').run(id, name.trim(), req.user.sub, invite_code);
+  res.status(201).json(db.prepare('SELECT * FROM teams WHERE id = ?').get(id));
+});
+
+// GET /api/teams/:id
+app.get('/api/teams/:id', authMiddleware, (req, res) => {
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found.' });
+  const userId = req.user.sub, isOwner = team.owner_id === userId;
+  const member = db.prepare('SELECT * FROM team_members WHERE team_id = ? AND user_id = ?').get(req.params.id, userId);
+  if (!isOwner && !member) return res.status(403).json({ error: 'You are not a member of this team.' });
+  const members = db.prepare(`SELECT tm.*, u.name, u.email FROM team_members tm JOIN users u ON u.id = tm.user_id WHERE tm.team_id = ? ORDER BY tm.joined_at ASC`).all(req.params.id);
+  const owner = db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(team.owner_id);
+  res.json({ ...team, my_role: isOwner ? 'owner' : member.role, is_owner: isOwner, members, owner });
+});
+
+// DELETE /api/teams/:id
+app.delete('/api/teams/:id', authMiddleware, (req, res) => {
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found.' });
+  if (team.owner_id !== req.user.sub) return res.status(403).json({ error: 'Only the owner can delete this team.' });
+  db.prepare('DELETE FROM teams WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// POST /api/teams/join  { code }
+app.post('/api/teams/join', authMiddleware, (req, res) => {
+  const { code } = req.body;
+  if (!code?.trim()) return res.status(400).json({ error: 'Invite code is required.' });
+  const team = db.prepare('SELECT * FROM teams WHERE invite_code = ?').get(code.trim());
+  if (!team) return res.status(404).json({ error: 'Invalid invite code.' });
+  const userId = req.user.sub;
+  if (team.owner_id === userId) return res.json({ ok: true, team_id: team.id, status: 'owner' });
+  const existing = db.prepare('SELECT * FROM team_members WHERE team_id = ? AND user_id = ?').get(team.id, userId);
+  if (existing) return res.json({ ok: true, team_id: team.id, status: 'already_member' });
+  db.prepare('INSERT INTO team_members (id, team_id, user_id) VALUES (?, ?, ?)').run(uid(), team.id, userId);
+  res.json({ ok: true, team_id: team.id, status: 'joined' });
+});
+
+// DELETE /api/teams/:id/members/me — leave a team
+app.delete('/api/teams/:id/members/me', authMiddleware, (req, res) => {
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found.' });
+  if (team.owner_id === req.user.sub) return res.status(400).json({ error: 'Owner cannot leave their own team. Delete it instead.' });
+  db.prepare('DELETE FROM team_members WHERE team_id = ? AND user_id = ?').run(req.params.id, req.user.sub);
+  res.json({ ok: true });
+});
+
+// DELETE /api/teams/:id/members/:memberId
+app.delete('/api/teams/:id/members/:memberId', authMiddleware, (req, res) => {
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(req.params.id);
+  if (!team || team.owner_id !== req.user.sub) return res.status(403).json({ error: 'Owner only.' });
+  db.prepare('DELETE FROM team_members WHERE id = ? AND team_id = ?').run(req.params.memberId, req.params.id);
+  res.json({ ok: true });
+});
+
+// POST /api/teams/:id/invite  { email }
+app.post('/api/teams/:id/invite', authMiddleware, (req, res) => {
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found.' });
+  if (team.owner_id !== req.user.sub) return res.status(403).json({ error: 'Only the owner can invite members.' });
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required.' });
+  const normalEmail = email.toLowerCase().trim();
+  if (normalEmail === req.user.email.toLowerCase()) return res.status(400).json({ error: 'You cannot invite yourself.' });
+  const invitedUser = db.prepare('SELECT * FROM users WHERE email = ?').get(normalEmail);
+  if (invitedUser) {
+    if (team.owner_id === invitedUser.id) return res.status(400).json({ error: 'This person already owns this team.' });
+    const existing = db.prepare('SELECT 1 FROM team_members WHERE team_id = ? AND user_id = ?').get(team.id, invitedUser.id);
+    if (existing) return res.status(400).json({ error: 'This person is already a member of the team.' });
+  }
+  const joinLink = `${getBaseUrl(req)}/tools/competition/dashboard?jointeam=${encodeURIComponent(team.invite_code)}`;
+  sendMail(normalEmail, `You're invited to join team: ${team.name}`, `
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:2rem;background:#111;color:#eee;border-radius:8px;">
+      <h2 style="color:#ff0000;margin-top:0;">Team Invitation!</h2>
+      <p><strong>${req.user.name}</strong> has invited you to join their team:</p>
+      <h3 style="color:#fff;margin:.5rem 0;">${team.name}</h3>
+      <a href="${joinLink}" style="display:inline-block;background:#ff0000;color:white;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:bold;margin:1rem 0;">Join Team →</a>
+      <p style="color:#888;font-size:.78rem;">Or visit the <a href="${getBaseUrl(req)}/tools/competition/dashboard" style="color:#ff6060;">dashboard</a> and use join code: <strong style="color:#fff;">${team.invite_code}</strong></p>
+    </div>`).catch(e => console.error('Email error:', e));
+  res.json({ ok: true });
+});
+
+// ─── API: Jeopardy ────────────────────────────────────────────────────────────
+
+// Multer: accept PDF uploads into memory (max 20 MB)
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+
+/**
+ * Naive question generator from raw PDF text.
+ * Splits text into sentences, picks candidates that look like factual
+ * statements (contain numbers, keywords, measurements, acronyms, etc.),
+ * then turns each one into a fill-in-the-blank or "what is" question.
+ */
+function generateQuestions(text) {
+  // Clean up whitespace / hyphenation artefacts common in PDFs
+  const cleaned = text
+    .replace(/\r\n/g, '\n')
+    .replace(/(\w)-\n(\w)/g, '$1$2')   // join hyphenated words split across lines
+    .replace(/\n{2,}/g, ' ')
+    .replace(/\s{2,}/g, ' ');
+
+  // Split into sentences
+  const sentences = cleaned.match(/[^.!?]+[.!?]+/g) || [];
+
+  const JUNK = /^[\d\s]{0,4}$|page|chapter|section|©|ftc|first tech challenge/i;
+  const INTERESTING = /\d+|\b(must|shall|may not|cannot|only|allowed|prohibited|penalty|point|score|field|robot|motor|servo|sensor|autonomous|tele.?op|alliance|driver|control hub|expansion hub)\b/i;
+
+  const good = sentences
+    .map(s => s.replace(/\s+/g, ' ').trim())
+    .filter(s => s.length > 40 && s.length < 300)
+    .filter(s => !JUNK.test(s))
+    .filter(s => INTERESTING.test(s));
+
+  // De-duplicate by first 60 chars
+  const seen = new Set();
+  const deduped = good.filter(s => {
+    const key = s.slice(0, 60).toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  // Shuffle and pick up to 30
+  const shuffled = deduped.sort(() => Math.random() - 0.5).slice(0, 30);
+
+  const POINT_VALUES = [100, 200, 300, 400, 500];
+  const CATEGORIES   = ['FIELD SETUP', 'SCORING', 'ROBOT RULES', 'AUTONOMOUS', 'TELEOP'];
+
+  return shuffled.map((sentence, i) => {
+    // Replace first meaningful numeric or keyword as the blank
+    const words     = sentence.split(' ');
+    const blankIdx  = words.findIndex(w => /^\d+$/.test(w) || w.length > 6);
+    let answer = '';
+    let question = sentence;
+    if (blankIdx !== -1) {
+      answer   = words[blankIdx];
+      const copy = [...words];
+      copy[blankIdx] = '___';
+      question = copy.join(' ');
+    } else {
+      answer   = words[words.length - 2] || '';
+      question = 'According to the game manual: ' + sentence;
+    }
+    return {
+      id:       crypto.randomUUID(),
+      category: CATEGORIES[i % CATEGORIES.length],
+      value:    POINT_VALUES[Math.floor(i / CATEGORIES.length) % POINT_VALUES.length],
+      clue:     question,
+      answer:   answer,
+    };
+  });
+}
+
+// POST /api/teams/:id/jeopardy/upload — upload PDF, generate questions
+app.post('/api/teams/:id/jeopardy/upload', authMiddleware, upload.single('pdf'), async (req, res) => {
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found.' });
+  const userId = req.user.sub, isOwner = team.owner_id === userId;
+  const member = db.prepare('SELECT 1 FROM team_members WHERE team_id = ? AND user_id = ?').get(req.params.id, userId);
+  if (!isOwner && !member) return res.status(403).json({ error: 'Not a team member.' });
+  if (!req.file) return res.status(400).json({ error: 'No PDF file uploaded.' });
+  if (req.file.mimetype !== 'application/pdf') return res.status(400).json({ error: 'Only PDF files are accepted.' });
+
+  try {
+    const parser    = new PDFParse({ data: req.file.buffer });
+    const result    = await parser.getText();
+    await parser.destroy();
+    const questions = generateQuestions(result.text);
+    if (!questions.length) return res.status(422).json({ error: 'Could not extract usable questions from this PDF. Try a text-based (non-scanned) game manual.' });
+
+    const id    = uid();
+    const title = (req.body.title || req.file.originalname.replace(/\.pdf$/i, '')).slice(0, 120);
+    db.prepare('INSERT INTO jeopardy_games (id, team_id, owner_id, title, questions) VALUES (?, ?, ?, ?, ?)').run(id, req.params.id, userId, title, JSON.stringify(questions));
+    res.status(201).json({ id, title, questions });
+  } catch (e) {
+    console.error('PDF parse error:', e);
+    res.status(500).json({ error: 'Failed to parse PDF.' });
+  }
+});
+
+// GET /api/teams/:id/jeopardy — list game sets for a team
+app.get('/api/teams/:id/jeopardy', authMiddleware, (req, res) => {
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found.' });
+  const userId = req.user.sub, isOwner = team.owner_id === userId;
+  const member = db.prepare('SELECT 1 FROM team_members WHERE team_id = ? AND user_id = ?').get(req.params.id, userId);
+  if (!isOwner && !member) return res.status(403).json({ error: 'Not a team member.' });
+  res.json(db.prepare('SELECT id, title, created_at FROM jeopardy_games WHERE team_id = ? ORDER BY created_at DESC').all(req.params.id));
+});
+
+// GET /api/teams/:id/jeopardy/:gameId — get full game (questions)
+app.get('/api/teams/:id/jeopardy/:gameId', authMiddleware, (req, res) => {
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found.' });
+  const userId = req.user.sub, isOwner = team.owner_id === userId;
+  const member = db.prepare('SELECT 1 FROM team_members WHERE team_id = ? AND user_id = ?').get(req.params.id, userId);
+  if (!isOwner && !member) return res.status(403).json({ error: 'Not a team member.' });
+  const game = db.prepare('SELECT * FROM jeopardy_games WHERE id = ? AND team_id = ?').get(req.params.gameId, req.params.id);
+  if (!game) return res.status(404).json({ error: 'Game not found.' });
+  res.json({ ...game, questions: JSON.parse(game.questions) });
+});
+
+// DELETE /api/teams/:id/jeopardy/:gameId
+app.delete('/api/teams/:id/jeopardy/:gameId', authMiddleware, (req, res) => {
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found.' });
+  const game = db.prepare('SELECT * FROM jeopardy_games WHERE id = ? AND team_id = ?').get(req.params.gameId, req.params.id);
+  if (!game) return res.status(404).json({ error: 'Game not found.' });
+  if (team.owner_id !== req.user.sub && game.owner_id !== req.user.sub)
+    return res.status(403).json({ error: 'Insufficient permissions.' });
+  db.prepare('DELETE FROM jeopardy_games WHERE id = ?').run(req.params.gameId);
+  res.json({ ok: true });
+});
+
+// ─── API: Scheduler ────────────────────────────────────────────────────────────
+
+// GET /api/teams/:id/schedule — all availability for the team
+app.get('/api/teams/:id/schedule', authMiddleware, (req, res) => {
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found.' });
+  const userId = req.user.sub, isOwner = team.owner_id === userId;
+  const member = db.prepare('SELECT 1 FROM team_members WHERE team_id = ? AND user_id = ?').get(req.params.id, userId);
+  if (!isOwner && !member) return res.status(403).json({ error: 'Not a team member.' });
+  const slots = db.prepare(`SELECT ss.*, u.name, u.email FROM schedule_slots ss JOIN users u ON u.id = ss.user_id WHERE ss.team_id = ? ORDER BY ss.date ASC, u.name ASC`).all(req.params.id);
+  res.json(slots);
+});
+
+// POST /api/teams/:id/schedule — submit / bulk-replace my availability
+// Body: { dates: ['2026-03-01', ...], note?: '' }
+app.post('/api/teams/:id/schedule', authMiddleware, (req, res) => {
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found.' });
+  const userId = req.user.sub, isOwner = team.owner_id === userId;
+  const member = db.prepare('SELECT 1 FROM team_members WHERE team_id = ? AND user_id = ?').get(req.params.id, userId);
+  if (!isOwner && !member) return res.status(403).json({ error: 'Not a team member.' });
+
+  const { dates, note = '' } = req.body;
+  if (!Array.isArray(dates)) return res.status(400).json({ error: 'dates must be an array of date strings.' });
+  // Validate date formats (YYYY-MM-DD)
+  const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+  if (dates.some(d => typeof d !== 'string' || !dateRe.test(d)))
+    return res.status(400).json({ error: 'All dates must be in YYYY-MM-DD format.' });
+
+  db.prepare('DELETE FROM schedule_slots WHERE team_id = ? AND user_id = ?').run(req.params.id, userId);
+  const insert = db.prepare('INSERT INTO schedule_slots (id, team_id, user_id, date, note) VALUES (?, ?, ?, ?, ?)');
+  const noteStr = String(note).slice(0, 200);
+  const insertMany = db.transaction(ds => { for (const d of ds) insert.run(uid(), req.params.id, userId, d, noteStr); });
+  insertMany(dates);
+  res.json({ ok: true, count: dates.length });
+});
+
+// DELETE /api/teams/:id/schedule/me — clear my submitted availability
+app.delete('/api/teams/:id/schedule/me', authMiddleware, (req, res) => {
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(req.params.id);
+  if (!team) return res.status(404).json({ error: 'Team not found.' });
+  const userId = req.user.sub, isOwner = team.owner_id === userId;
+  const member = db.prepare('SELECT 1 FROM team_members WHERE team_id = ? AND user_id = ?').get(req.params.id, userId);
+  if (!isOwner && !member) return res.status(403).json({ error: 'Not a team member.' });
+  db.prepare('DELETE FROM schedule_slots WHERE team_id = ? AND user_id = ?').run(req.params.id, userId);
+  res.json({ ok: true });
+});
+
+// ─── API: Engineering Notebook ────────────────────────────────────────────────
+
+function requireTeamAccess(teamId, userId) {
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(teamId);
+  if (!team) return null;
+  const isOwner = team.owner_id === userId;
+  const member  = db.prepare('SELECT 1 FROM team_members WHERE team_id = ? AND user_id = ?').get(teamId, userId);
+  if (!isOwner && !member) return null;
+  return { team, isOwner };
+}
+
+// GET /api/teams/:id/notebook — all entries (any member)
+app.get('/api/teams/:id/notebook', authMiddleware, (req, res) => {
+  const access = requireTeamAccess(req.params.id, req.user.sub);
+  if (!access) return res.status(403).json({ error: 'Not a team member.' });
+  const entries = db.prepare(`SELECT * FROM notebook_entries WHERE team_id = ? ORDER BY entry_date DESC, created_at DESC`).all(req.params.id);
+  res.json(entries);
+});
+
+// POST /api/teams/:id/notebook — add an entry (any member)
+app.post('/api/teams/:id/notebook', authMiddleware, (req, res) => {
+  const access = requireTeamAccess(req.params.id, req.user.sub);
+  if (!access) return res.status(403).json({ error: 'Not a team member.' });
+  const { entry_date, achieved, next_steps } = req.body;
+  if (!entry_date?.trim()) return res.status(400).json({ error: 'entry_date is required.' });
+  if (!achieved?.trim() && !next_steps?.trim()) return res.status(400).json({ error: 'At least one of achieved or next steps is required.' });
+  const user = db.prepare('SELECT name FROM users WHERE id = ?').get(req.user.sub);
+  const id = uid();
+  db.prepare('INSERT INTO notebook_entries (id, team_id, author_id, author_name, entry_date, achieved, next_steps) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(id, req.params.id, req.user.sub, user?.name || req.user.name || 'Unknown', entry_date.trim(), (achieved || '').trim(), (next_steps || '').trim());
+  res.status(201).json(db.prepare('SELECT * FROM notebook_entries WHERE id = ?').get(id));
+});
+
+// PATCH /api/teams/:id/notebook/:entryId — edit own entry (or owner edits any)
+app.patch('/api/teams/:id/notebook/:entryId', authMiddleware, (req, res) => {
+  const access = requireTeamAccess(req.params.id, req.user.sub);
+  if (!access) return res.status(403).json({ error: 'Not a team member.' });
+  const entry = db.prepare('SELECT * FROM notebook_entries WHERE id = ? AND team_id = ?').get(req.params.entryId, req.params.id);
+  if (!entry) return res.status(404).json({ error: 'Entry not found.' });
+  if (entry.author_id !== req.user.sub && !access.isOwner) return res.status(403).json({ error: 'You can only edit your own entries.' });
+  const { entry_date, achieved, next_steps } = req.body;
+  const updates = {};
+  if (entry_date?.trim())  updates.entry_date  = entry_date.trim();
+  if (achieved  != null)  updates.achieved    = achieved.trim();
+  if (next_steps != null) updates.next_steps  = next_steps.trim();
+  if (!Object.keys(updates).length) return res.status(400).json({ error: 'Nothing to update.' });
+  db.prepare(`UPDATE notebook_entries SET ${Object.keys(updates).map(k => `${k} = ?`).join(', ')} WHERE id = ?`).run(...Object.values(updates), entry.id);
+  res.json(db.prepare('SELECT * FROM notebook_entries WHERE id = ?').get(entry.id));
+});
+
+// DELETE /api/teams/:id/notebook/:entryId — delete own entry (or owner deletes any)
+app.delete('/api/teams/:id/notebook/:entryId', authMiddleware, (req, res) => {
+  const access = requireTeamAccess(req.params.id, req.user.sub);
+  if (!access) return res.status(403).json({ error: 'Not a team member.' });
+  const entry = db.prepare('SELECT * FROM notebook_entries WHERE id = ? AND team_id = ?').get(req.params.entryId, req.params.id);
+  if (!entry) return res.status(404).json({ error: 'Entry not found.' });
+  if (entry.author_id !== req.user.sub && !access.isOwner) return res.status(403).json({ error: 'You can only delete your own entries.' });
+  db.prepare('DELETE FROM notebook_entries WHERE id = ?').run(entry.id);
+  res.json({ ok: true });
+});
+
 // ─── Page Routes ──────────────────────────────────────────────────────────────
 const pageRoutes = {
   '/':                             'index.html',
@@ -295,6 +661,10 @@ const pageRoutes = {
   '/tools/competition/dashboard':  'tools/competition/dashboard.html',
   '/tools/competition/new':        'tools/competition/new-event.html',
   '/tools/competition/join':       'tools/competition/join.html',
+  '/tools/competition/teams':      'tools/competition/teams.html',
+  '/tools/competition/jeopardy':   'tools/competition/jeopardy.html',
+  '/tools/competition/scheduler':  'tools/competition/scheduler.html',
+  '/tools/competition/notebook':    'tools/competition/notebook.html',
 };
 
 Object.entries(pageRoutes).forEach(([route, file]) => {

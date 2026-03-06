@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engineering Notebook — FTC Tools</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/tools/competition/competition.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    .nb-page { max-width: 860px; margin: 0 auto; padding: 2rem 1rem; }
+
+    .nb-top {
+      display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .nb-top-text { flex: 1; min-width: 0; }
+    .nb-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 2px;
+      color: #fff;
+      margin: 0 0 .3rem;
+    }
+    .nb-subtitle { color: var(--text-muted); font-size: .85rem; }
+
+    .nb-team-bar {
+      display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+      margin-bottom: 1.75rem;
+    }
+    .nb-team-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: .68rem;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* ── Entry form ── */
+    .nb-form-card {
+      background: #141414;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .nb-form-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: .72rem;
+      letter-spacing: 2px;
+      color: #22c55e;
+      margin-bottom: 1.1rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .nb-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem 1rem;
+    }
+    @media (max-width: 600px) { .nb-form-grid { grid-template-columns: 1fr; } }
+    .nb-form-grid .full { grid-column: 1 / -1; }
+
+    /* ── Entries list ── */
+    .nb-entries { display: flex; flex-direction: column; gap: 1rem; }
+
+    .nb-entry {
+      background: #141414;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.4rem;
+      transition: border-color .15s;
+    }
+    .nb-entry:hover { border-color: #2a2a2a; }
+
+    .nb-entry-header {
+      display: flex; align-items: flex-start; gap: .75rem;
+      margin-bottom: .9rem;
+    }
+    .nb-entry-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: rgba(34, 197, 94, .15);
+      border: 1px solid rgba(34, 197, 94, .3);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: .7rem;
+      color: #22c55e;
+      flex-shrink: 0;
+    }
+    .nb-entry-meta { flex: 1; min-width: 0; }
+    .nb-entry-author {
+      font-weight: 600;
+      color: #e8e8e8;
+      font-size: .9rem;
+    }
+    .nb-entry-date {
+      font-size: .72rem;
+      color: var(--text-muted);
+      margin-top: .1rem;
+    }
+    .nb-entry-actions { display: flex; gap: .3rem; flex-shrink: 0; }
+
+    .nb-section {
+      margin-bottom: .8rem;
+    }
+    .nb-section-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: .6rem;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: .3rem;
+      display: flex; align-items: center; gap: .35rem;
+    }
+    .nb-section-label i { font-size: .65rem; }
+    .nb-section-body {
+      color: #d4d4d4;
+      font-size: .9rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .nb-section-body.empty { color: #3a3a3a; font-style: italic; }
+
+    .nb-divider {
+      height: 1px; background: var(--border); margin: .8rem 0;
+    }
+
+    .nb-empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+    .nb-empty i { font-size: 2.5rem; margin-bottom: .75rem; display: block; color: #2a2a2a; }
+    .nb-empty p { margin: .25rem 0; font-size: .9rem; }
+
+    .nb-search-bar {
+      display: flex; gap: .5rem; margin-bottom: 1.2rem; flex-wrap: wrap;
+    }
+
+    /* Edit inline form */
+    .nb-edit-form { display: none; margin-top: .75rem; }
+    .nb-edit-form.open { display: block; }
+  </style>
+</head>
+<body>
+
+<header class="comp-header">
+  <a href="/" class="comp-header-logo">METAL <span>MANIACS</span></a>
+  <div class="comp-header-title"><i class="fas fa-book-open"></i> ENGINEERING NOTEBOOK</div>
+  <div class="comp-header-right">
+    <a href="/tools/competition/dashboard" class="cbtn cbtn-ghost cbtn-sm"><i class="fas fa-table-columns"></i> Dashboard</a>
+    <div id="user-pill" class="comp-auth-pill member" style="cursor:default;">
+      <div class="dot"></div>
+      <span id="user-pill-label">…</span>
+    </div>
+  </div>
+</header>
+
+<div class="nb-page">
+
+  <!-- Top -->
+  <div class="nb-top">
+    <div class="nb-top-text">
+      <h1 class="nb-title"><i class="fas fa-book-open" style="color:#22c55e;margin-right:.5rem;font-size:1.1rem;"></i>ENGINEERING NOTEBOOK</h1>
+      <p class="nb-subtitle">Track daily progress, achievements, and next goals for your team.</p>
+    </div>
+  </div>
+
+  <!-- Team selector -->
+  <div class="nb-team-bar">
+    <span class="nb-team-label"><i class="fas fa-users"></i> TEAM</span>
+    <select id="team-select" class="cinput" style="max-width:280px;" onchange="onTeamChange()">
+      <option value="">— Select a team —</option>
+    </select>
+    <span id="nb-loading-teams" style="color:var(--text-muted);font-size:.8rem;"><i class="fas fa-spinner fa-spin"></i></span>
+  </div>
+
+  <!-- New Entry Form -->
+  <div class="nb-form-card" id="entry-form-card" style="display:none;">
+    <div class="nb-form-title"><i class="fas fa-pen-to-square" style="color:#22c55e;"></i> NEW ENTRY</div>
+    <div class="nb-form-grid">
+      <div class="form-field">
+        <label class="form-label">Your Name</label>
+        <input type="text" id="f-author" class="cinput" readonly style="background:#0f0f0f;color:#888;">
+      </div>
+      <div class="form-field">
+        <label class="form-label">Date</label>
+        <input type="date" id="f-date" class="cinput">
+      </div>
+      <div class="form-field full">
+        <label class="form-label">What did you achieve? <span class="req">*</span></label>
+        <textarea id="f-achieved" class="cinput" rows="3" style="resize:vertical;" placeholder="Describe what was accomplished today…"></textarea>
+      </div>
+      <div class="form-field full">
+        <label class="form-label">What do you need to achieve next?</label>
+        <textarea id="f-next" class="cinput" rows="2" style="resize:vertical;" placeholder="Goals for the next session…"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap;">
+      <button class="cbtn cbtn-sm" style="background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3);" onclick="submitEntry()">
+        <i class="fas fa-plus"></i> Add Entry
+      </button>
+      <div id="f-err" style="color:#f87171;font-size:.8rem;align-self:center;display:none;"></div>
+    </div>
+  </div>
+
+  <!-- No team selected -->
+  <div id="no-team-msg" style="text-align:center;padding:2.5rem 1rem;color:var(--text-muted);">
+    <i class="fas fa-users-slash" style="font-size:2rem;display:block;margin-bottom:.75rem;color:#2a2a2a;"></i>
+    <p>Select a team above to view and add notebook entries.</p>
+    <a href="/tools/competition/dashboard" class="cbtn cbtn-ghost cbtn-sm" style="margin-top:.75rem;">
+      <i class="fas fa-plus"></i> Create or join a team
+    </a>
+  </div>
+
+  <!-- Entries section -->
+  <div id="entries-section" style="display:none;">
+    <!-- Search / filter -->
+    <div class="nb-search-bar">
+      <input type="text" id="nb-search" class="cinput" style="flex:1;min-width:180px;" placeholder="Search entries…" oninput="renderEntries()">
+      <select id="nb-filter-author" class="cinput" style="max-width:200px;" onchange="renderEntries()">
+        <option value="">All members</option>
+      </select>
+    </div>
+
+    <div id="entry-count" style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem;"></div>
+    <div id="entries-list" class="nb-entries"></div>
+  </div>
+
+</div>
+
+
+<!-- Edit modal -->
+<div class="modal-overlay hidden" id="edit-modal">
+  <div class="modal-box" style="max-width:580px;">
+    <button class="modal-close" onclick="closeEditModal()"><i class="fas fa-times"></i></button>
+    <div class="modal-title"><i class="fas fa-pen"></i> EDIT ENTRY</div>
+    <input type="hidden" id="edit-entry-id">
+    <div class="nb-form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem 1rem;">
+      <div class="form-field">
+        <label class="form-label">Date</label>
+        <input type="date" id="edit-date" class="cinput">
+      </div>
+      <div></div>
+      <div class="form-field full" style="grid-column:1/-1;">
+        <label class="form-label">What was achieved?</label>
+        <textarea id="edit-achieved" class="cinput" rows="3" style="resize:vertical;"></textarea>
+      </div>
+      <div class="form-field full" style="grid-column:1/-1;">
+        <label class="form-label">What's next?</label>
+        <textarea id="edit-next" class="cinput" rows="2" style="resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:.5rem;margin-top:1rem;">
+      <button class="cbtn cbtn-red" style="flex:1;justify-content:center;" onclick="saveEdit()"><i class="fas fa-save"></i> Save</button>
+      <button class="cbtn cbtn-ghost" onclick="closeEditModal()">Cancel</button>
+    </div>
+    <div id="edit-err" style="color:#f87171;font-size:.8rem;margin-top:.4rem;display:none;"></div>
+  </div>
+</div>
+
+
+<script src="/tools/competition/auth.js"></script>
+<script>
+  let currentUser = null;
+  let allTeams    = [];
+  let activeTeamId = null;
+  let allEntries  = [];
+
+  const DEFAULT_TEAM_KEY = 'mm_default_team';
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    currentUser = requireAuth();
+    if (!currentUser) return;
+    document.getElementById('user-pill-label').textContent = currentUser.name;
+
+    // Set today's date as default
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById('f-date').value = today;
+    document.getElementById('f-author').value = currentUser.name;
+
+    await loadTeams();
+  });
+
+  // ── Teams ────────────────────────────────────────────────────────────────────
+  async function loadTeams() {
+    const el = document.getElementById('nb-loading-teams');
+    const res = await apiFetch('/api/teams');
+    el.style.display = 'none';
+    if (!res?.ok) return;
+    allTeams = await res.json();
+
+    const sel = document.getElementById('team-select');
+    sel.innerHTML = '<option value="">— Select a team —</option>' +
+      allTeams.map(t => `<option value="${escHtml(t.id)}">${escHtml(t.name)}</option>`).join('');
+
+    // Auto-select default team
+    try {
+      const dt = JSON.parse(localStorage.getItem(DEFAULT_TEAM_KEY));
+      if (dt?.id && allTeams.find(t => t.id === dt.id)) {
+        sel.value = dt.id;
+        await onTeamChange();
+        return;
+      }
+    } catch {}
+    if (allTeams.length === 1) {
+      sel.value = allTeams[0].id;
+      await onTeamChange();
+    }
+  }
+
+  async function onTeamChange() {
+    const id = document.getElementById('team-select').value;
+    activeTeamId = id || null;
+
+    document.getElementById('no-team-msg').style.display     = id ? 'none' : 'block';
+    document.getElementById('entries-section').style.display = id ? 'block' : 'none';
+    document.getElementById('entry-form-card').style.display = id ? 'block' : 'none';
+
+    if (!id) return;
+    await loadEntries();
+  }
+
+  // ── Entries ──────────────────────────────────────────────────────────────────
+  async function loadEntries() {
+    if (!activeTeamId) return;
+    document.getElementById('entries-list').innerHTML =
+      '<div style="text-align:center;padding:1.5rem;color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+    const res = await apiFetch(`/api/teams/${activeTeamId}/notebook`);
+    if (!res?.ok) { document.getElementById('entries-list').innerHTML = '<div style="color:#f87171;text-align:center;padding:1rem;">Failed to load entries.</div>'; return; }
+    allEntries = await res.json();
+
+    // Rebuild author filter
+    const authors = [...new Set(allEntries.map(e => e.author_name))].sort();
+    const fSel = document.getElementById('nb-filter-author');
+    const prev = fSel.value;
+    fSel.innerHTML = '<option value="">All members</option>' + authors.map(a => `<option value="${escHtml(a)}">${escHtml(a)}</option>`).join('');
+    if (authors.includes(prev)) fSel.value = prev;
+
+    renderEntries();
+  }
+
+  function renderEntries() {
+    const search  = (document.getElementById('nb-search').value || '').toLowerCase();
+    const author  = document.getElementById('nb-filter-author').value;
+
+    let filtered = allEntries;
+    if (author)  filtered = filtered.filter(e => e.author_name === author);
+    if (search) filtered = filtered.filter(e =>
+      e.author_name.toLowerCase().includes(search) ||
+      e.entry_date.includes(search) ||
+      e.achieved.toLowerCase().includes(search) ||
+      e.next_steps.toLowerCase().includes(search)
+    );
+
+    document.getElementById('entry-count').textContent =
+      filtered.length === allEntries.length
+        ? `${allEntries.length} entr${allEntries.length === 1 ? 'y' : 'ies'}`
+        : `Showing ${filtered.length} of ${allEntries.length} entries`;
+
+    const el = document.getElementById('entries-list');
+    if (!filtered.length) {
+      el.innerHTML = `<div class="nb-empty">
+        <i class="fas fa-journal-whills"></i>
+        <p>${allEntries.length ? 'No entries match your search.' : 'No entries yet.'}</p>
+        ${!allEntries.length ? '<p style="font-size:.8rem;margin-top:.25rem;">Be the first to add one using the form above!</p>' : ''}
+      </div>`;
+      return;
+    }
+
+    el.innerHTML = filtered.map(e => {
+      const initials = e.author_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      const canEdit  = (e.author_id === currentUser.sub);
+      // Check if active team owner
+      const team = allTeams.find(t => t.id === activeTeamId);
+      const isOwner = team && team.owner_id === currentUser.sub;
+      const canDelete = canEdit || isOwner;
+
+      return `<div class="nb-entry" id="entry-${e.id}">
+        <div class="nb-entry-header">
+          <div class="nb-entry-avatar">${escHtml(initials)}</div>
+          <div class="nb-entry-meta">
+            <div class="nb-entry-author">${escHtml(e.author_name)}</div>
+            <div class="nb-entry-date"><i class="fas fa-calendar" style="margin-right:.3rem;"></i>${escHtml(e.entry_date)}</div>
+          </div>
+          <div class="nb-entry-actions">
+            ${canEdit ? `<button class="icon-btn" title="Edit" onclick="openEditModal('${e.id}')"><i class="fas fa-pen"></i></button>` : ''}
+            ${canDelete ? `<button class="icon-btn danger" title="Delete" onclick="deleteEntry('${e.id}')"><i class="fas fa-trash"></i></button>` : ''}
+          </div>
+        </div>
+        ${e.achieved ? `<div class="nb-section">
+          <div class="nb-section-label"><i class="fas fa-check-circle" style="color:#22c55e;"></i> ACHIEVED</div>
+          <div class="nb-section-body">${escHtml(e.achieved)}</div>
+        </div>` : ''}
+        ${e.achieved && e.next_steps ? '<div class="nb-divider"></div>' : ''}
+        ${e.next_steps ? `<div class="nb-section">
+          <div class="nb-section-label"><i class="fas fa-arrow-right" style="color:var(--yellow);"></i> NEXT STEPS</div>
+          <div class="nb-section-body">${escHtml(e.next_steps)}</div>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  // ── Add entry ────────────────────────────────────────────────────────────────
+  async function submitEntry() {
+    const date      = document.getElementById('f-date').value.trim();
+    const achieved  = document.getElementById('f-achieved').value.trim();
+    const nextSteps = document.getElementById('f-next').value.trim();
+    const errEl     = document.getElementById('f-err');
+    errEl.style.display = 'none';
+
+    if (!date)              { errEl.textContent = 'Date is required.';          errEl.style.display = 'block'; return; }
+    if (!achieved && !nextSteps) { errEl.textContent = 'Fill in at least one field.'; errEl.style.display = 'block'; return; }
+
+    const res  = await apiFetch(`/api/teams/${activeTeamId}/notebook`, {
+      method: 'POST',
+      body: JSON.stringify({ entry_date: date, achieved, next_steps: nextSteps }),
+    });
+    if (!res?.ok) {
+      const body = await res?.json().catch(() => ({}));
+      errEl.textContent = body?.error || 'Failed to save entry.';
+      errEl.style.display = 'block';
+      return;
+    }
+    // Clear form, keep date + name
+    document.getElementById('f-achieved').value = '';
+    document.getElementById('f-next').value     = '';
+    await loadEntries();
+  }
+
+  // ── Edit entry ───────────────────────────────────────────────────────────────
+  function openEditModal(id) {
+    const e = allEntries.find(x => x.id === id);
+    if (!e) return;
+    document.getElementById('edit-entry-id').value  = id;
+    document.getElementById('edit-date').value      = e.entry_date;
+    document.getElementById('edit-achieved').value  = e.achieved;
+    document.getElementById('edit-next').value      = e.next_steps;
+    document.getElementById('edit-err').style.display = 'none';
+    document.getElementById('edit-modal').classList.remove('hidden');
+  }
+  function closeEditModal() {
+    document.getElementById('edit-modal').classList.add('hidden');
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeEditModal();
+  });
+
+  async function saveEdit() {
+    const id        = document.getElementById('edit-entry-id').value;
+    const date      = document.getElementById('edit-date').value.trim();
+    const achieved  = document.getElementById('edit-achieved').value.trim();
+    const nextSteps = document.getElementById('edit-next').value.trim();
+    const errEl     = document.getElementById('edit-err');
+    errEl.style.display = 'none';
+
+    if (!date) { errEl.textContent = 'Date is required.'; errEl.style.display = 'block'; return; }
+
+    const res = await apiFetch(`/api/teams/${activeTeamId}/notebook/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ entry_date: date, achieved, next_steps: nextSteps }),
+    });
+    if (!res?.ok) {
+      const body = await res?.json().catch(() => ({}));
+      errEl.textContent = body?.error || 'Failed to save.';
+      errEl.style.display = 'block';
+      return;
+    }
+    closeEditModal();
+    await loadEntries();
+  }
+
+  // ── Delete entry ─────────────────────────────────────────────────────────────
+  async function deleteEntry(id) {
+    if (!confirm('Delete this notebook entry? This cannot be undone.')) return;
+    const res = await apiFetch(`/api/teams/${activeTeamId}/notebook/${id}`, { method: 'DELETE' });
+    if (res?.ok) {
+      await loadEntries();
+    } else {
+      const body = await res?.json().catch(() => ({}));
+      alert('Failed to delete: ' + (body?.error || 'Unknown error'));
+    }
+  }
+</script>
+</body>
+</html>

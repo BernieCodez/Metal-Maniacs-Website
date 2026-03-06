@@ -1821,7 +1821,8 @@ nav ul li a:hover {
 
 /* Auth strip below hero */
 .tools-auth-section {
-    background: #111;
+    border-top: 4px solid #333;
+    background: #1a1a1a;
     border-bottom: 2px solid #2a2a2a;
     padding: 2rem 5%;
 }
@@ -1857,6 +1858,7 @@ nav ul li a:hover {
 
 /* Tools grid */
 .tools-grid-section {
+    border-top: 4px solid #333;
     padding: 5rem 5%;
 }
 
