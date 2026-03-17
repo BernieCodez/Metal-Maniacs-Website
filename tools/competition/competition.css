@@ -44,7 +44,7 @@ body { padding-top: 0; }
   text-decoration: none;
   transition: transform 0.3s ease;
   display: inline-block;
-  letter-spacing: normal;
+  letter-spacing: 2px;
 }
 .comp-header-logo:hover { transform: scale(1.05); }
 .comp-header-logo span { color: var(--red); }

@@ -4,7 +4,7 @@
   "description": "Metal Maniacs FTC Robotics Team Website",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "bash start.sh",
     "dev": "nodemon server.js"
   },
   "dependencies": {

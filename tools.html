@@ -4,582 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FTC Tool Suite | Metal Maniacs</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        /* ── Hero ── */
-        .tools-hero {
-            position: relative;
-            min-height: 70vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            background: radial-gradient(ellipse at 60% 40%, #1f0000 0%, #1a1a1a 55%, #101010 100%);
-            margin-top: 70px;
-            padding: 4rem 5%;
-            text-align: center;
-        }
-        .tools-hero-gear {
-            position: absolute;
-            font-size: clamp(280px, 38vw, 560px);
-            line-height: 1;
-            color: rgba(255,0,0,0.04);
-            pointer-events: none;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            animation: slowSpin 30s linear infinite;
-        }
-        .tools-hero-gear-sm {
-            position: absolute;
-            font-size: clamp(80px, 12vw, 180px);
-            color: rgba(255,0,0,0.06);
-            pointer-events: none;
-            top: 20%; right: 8%;
-            animation: slowSpin 18s linear infinite reverse;
-        }
-        .tools-hero-content {
-            position: relative;
-            z-index: 1;
-            max-width: 760px;
-            margin: 0 auto;
-        }
-        .tools-hero-eyebrow {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.7rem;
-            letter-spacing: 4px;
-            color: #ff0000;
-            text-transform: uppercase;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.6rem;
-        }
-        .tools-hero-eyebrow::before,
-        .tools-hero-eyebrow::after {
-            content: '';
-            width: 30px;
-            height: 1px;
-            background: #ff0000;
-            opacity: 0.6;
-        }
-        .tools-hero h1 {
-            font-size: clamp(2.5rem, 6vw, 5rem);
-            color: #fff;
-            line-height: 1.1;
-            margin-bottom: 1.25rem;
-        }
-        .tools-hero h1 span { color: #ff0000; }
-        .tools-hero-sub {
-            font-size: 1.1rem;
-            color: #aaa;
-            line-height: 1.7;
-            margin-bottom: 2.5rem;
-            max-width: 560px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .tools-hero-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        /* ── Stat Strip ── */
-        .tools-stats-strip {
-            background: #111;
-            border-top: 2px solid #1f1f1f;
-            border-bottom: 2px solid #1f1f1f;
-            padding: 1.8rem 5%;
-        }
-        .tools-stats-inner {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            max-width: 900px;
-            margin: 0 auto;
-            text-align: center;
-        }
-        .tstat-num {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.8rem;
-            color: #ff0000;
-            line-height: 1;
-        }
-        .tstat-label {
-            font-size: 0.7rem;
-            letter-spacing: 2px;
-            color: #555;
-            text-transform: uppercase;
-            margin-top: 0.3rem;
-        }
-
-        /* ── Auth Banner ── */
-        .tools-auth-banner {
-            background: linear-gradient(90deg, #1a0000 0%, #1e1e1e 50%, #1a0000 100%);
-            border-top: 1px solid #2a2a2a;
-            border-bottom: 1px solid #2a2a2a;
-            padding: 1.8rem 5%;
-        }
-        .tools-auth-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 1rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .tools-auth-copy {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        .tools-auth-copy-icon {
-            width: 42px; height: 42px;
-            background: rgba(255,0,0,0.1);
-            border: 1px solid rgba(255,0,0,0.25);
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            color: #ff0000;
-            font-size: 1.1rem;
-            flex-shrink: 0;
-        }
-        .tools-auth-copy-text strong {
-            display: block;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.75rem;
-            letter-spacing: 1.5px;
-            color: #fff;
-            margin-bottom: 0.2rem;
-        }
-        .tools-auth-copy-text span {
-            font-size: 0.8rem;
-            color: #666;
-        }
-        .tools-auth-btns {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .tauth-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.65rem 1.4rem;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.72rem;
-            letter-spacing: 1px;
-            text-decoration: none;
-            border-radius: 0;
-            text-transform: uppercase;
-            transition: 0.25s;
-        }
-        .tauth-btn.primary {
-            background: #ff0000;
-            color: #fff;
-        }
-        .tauth-btn.primary:hover {
-            background: #cc0000;
-            box-shadow: 0 0 14px rgba(255,0,0,0.45);
-        }
-        .tauth-btn.ghost {
-            border: 1px solid #444;
-            color: #ccc;
-        }
-        .tauth-btn.ghost:hover {
-            border-color: #ff0000;
-            color: #ff0000;
-        }
-
-        /* ── Section Header ── */
-        .tools-section-header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-        .tools-section-label {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.65rem;
-            letter-spacing: 3.5px;
-            color: #ff0000;
-            text-transform: uppercase;
-            margin-bottom: 0.6rem;
-        }
-        .tools-section-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: clamp(1.4rem, 3vw, 2rem);
-            color: #fff;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        .tools-section-desc {
-            color: #666;
-            font-size: 0.9rem;
-            margin-top: 0.75rem;
-            max-width: 560px;
-            margin-left: auto;
-            margin-right: auto;
-            line-height: 1.7;
-        }
-
-        /* ── Tool Cards Grid ── */
-        .ftc-tools-section {
-            padding: 5rem 5%;
-            background: #1a1a1a;
-            border-top: 4px solid #222;
-        }
-        .ftc-tools-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .ftc-tool-card {
-            background: #1e1e1e;
-            border: 1px solid #2a2a2a;
-            border-radius: 10px;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
-            position: relative;
-            overflow: hidden;
-        }
-        .ftc-tool-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            transition: opacity 0.25s;
-            opacity: 0;
-        }
-        .ftc-tool-card:hover {
-            transform: translateY(-5px);
-        }
-        .ftc-tool-card:hover::before { opacity: 1; }
-
-        /* Color variants */
-        .ftc-card-red  { --accent: #ff0000; --accent-bg: rgba(255,0,0,0.07); --accent-border: rgba(255,0,0,0.2); }
-        .ftc-card-yellow{ --accent: #facc15; --accent-bg: rgba(250,204,21,0.07); --accent-border: rgba(250,204,21,0.2); }
-        .ftc-card-blue  { --accent: #3b82f6; --accent-bg: rgba(59,130,246,0.07); --accent-border: rgba(59,130,246,0.2); }
-        .ftc-card-green { --accent: #22c55e; --accent-bg: rgba(34,197,94,0.07); --accent-border: rgba(34,197,94,0.2); }
-
-        .ftc-tool-card::before     { background: var(--accent); }
-        .ftc-tool-card:hover       { border-color: var(--accent-border); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
-
-        .ftc-card-icon-wrap {
-            width: 52px; height: 52px;
-            background: var(--accent-bg);
-            border: 1px solid var(--accent-border);
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.4rem;
-            color: var(--accent);
-            flex-shrink: 0;
-        }
-        .ftc-card-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.8rem;
-            letter-spacing: 1.5px;
-            color: #fff;
-            text-transform: uppercase;
-        }
-        .ftc-card-desc {
-            color: #888;
-            font-size: 0.85rem;
-            line-height: 1.65;
-            flex-grow: 1;
-        }
-        .ftc-card-features {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 0.45rem;
-            padding: 0;
-        }
-        .ftc-card-features li {
-            font-size: 0.78rem;
-            color: #777;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .ftc-card-features li i {
-            color: var(--accent);
-            font-size: 0.65rem;
-            width: 12px;
-            flex-shrink: 0;
-        }
-        .ftc-card-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 0.25rem;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-        .ftc-card-badge {
-            font-size: 0.65rem;
-            font-family: 'Orbitron', sans-serif;
-            letter-spacing: 1px;
-            padding: 0.28rem 0.65rem;
-            border-radius: 3px;
-            text-transform: uppercase;
-        }
-        .ftc-badge-member {
-            background: rgba(255,0,0,0.1);
-            color: #ff6666;
-            border: 1px solid rgba(255,0,0,0.2);
-        }
-        .ftc-badge-free {
-            background: rgba(34,197,94,0.1);
-            color: #22c55e;
-            border: 1px solid rgba(34,197,94,0.2);
-        }
-        .ftc-card-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.55rem 1.1rem;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.68rem;
-            letter-spacing: 1px;
-            text-decoration: none;
-            border-radius: 0;
-            background: var(--accent-bg);
-            color: var(--accent);
-            border: 1px solid var(--accent-border);
-            text-transform: uppercase;
-            transition: 0.2s;
-            cursor: pointer;
-        }
-        .ftc-card-btn:hover {
-            background: var(--accent);
-            color: #111;
-        }
-        .ftc-card-btn.locked {
-            opacity: 0.4;
-            pointer-events: none;
-            cursor: not-allowed;
-        }
-        .ftc-card-divider {
-            border: none;
-            border-top: 1px solid #2a2a2a;
-            margin: 0.25rem 0;
-        }
-
-        /* ── How Teams Work ── */
-        .tools-teams-section {
-            padding: 5rem 5%;
-            background: #111;
-            border-top: 4px solid #1a1a1a;
-        }
-        .tools-teams-steps {
-            display: flex;
-            align-items: stretch;
-            justify-content: center;
-            gap: 0;
-            max-width: 1100px;
-            margin: 0 auto 3rem;
-            flex-wrap: wrap;
-        }
-        .teams-step {
-            flex: 1;
-            min-width: 220px;
-            max-width: 300px;
-            background: #161616;
-            border: 1px solid #222;
-            border-radius: 10px;
-            padding: 2rem 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            position: relative;
-            transition: border-color 0.2s;
-        }
-        .teams-step:hover { border-color: #ff0000; }
-        .teams-step-num {
-            position: absolute;
-            top: -1px; right: -1px;
-            background: #ff0000;
-            color: #fff;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.6rem;
-            letter-spacing: 1px;
-            padding: 0.2rem 0.5rem;
-            border-bottom-left-radius: 6px;
-            border-top-right-radius: 9px;
-        }
-        .teams-step-icon {
-            width: 48px; height: 48px;
-            background: rgba(255,0,0,0.08);
-            border: 1px solid rgba(255,0,0,0.18);
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            color: #ff0000;
-            font-size: 1.3rem;
-        }
-        .teams-step-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.75rem;
-            letter-spacing: 1.2px;
-            color: #fff;
-            text-transform: uppercase;
-        }
-        .teams-step-desc {
-            font-size: 0.82rem;
-            color: #666;
-            line-height: 1.65;
-        }
-        .teams-step-connector {
-            display: flex;
-            align-items: center;
-            padding: 0 0.75rem;
-            color: #2a2a2a;
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-        .tools-teams-extra {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1rem;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-        .teams-extra-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-            padding: 1.25rem 1.5rem;
-            background: #161616;
-            border: 1px solid #1f1f1f;
-            border-radius: 8px;
-        }
-        .teams-extra-item > i {
-            color: #ff0000;
-            font-size: 1rem;
-            margin-top: 0.15rem;
-            flex-shrink: 0;
-            width: 18px;
-        }
-        .teams-extra-item strong {
-            display: block;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.68rem;
-            letter-spacing: 1px;
-            color: #ccc;
-            text-transform: uppercase;
-            margin-bottom: 0.3rem;
-        }
-        .teams-extra-item span {
-            font-size: 0.78rem;
-            color: #555;
-            line-height: 1.5;
-        }
-        @media (max-width: 768px) {
-            .teams-step-connector { display: none; }
-            .tools-teams-steps { flex-direction: column; align-items: center; gap: 1rem; }
-            .teams-step { max-width: 100%; width: 100%; }
-        }
-
-        /* ── Capabilities Strip ── */
-        .tools-caps-section {
-            padding: 4.5rem 5%;
-            background: #111;
-            border-top: 4px solid #1a1a1a;
-        }
-        .tools-caps-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-        .cap-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-            padding: 1.5rem;
-            background: #161616;
-            border: 1px solid #222;
-            border-radius: 8px;
-            transition: border-color 0.2s;
-        }
-        .cap-item:hover { border-color: #ff0000; }
-        .cap-icon {
-            width: 38px; height: 38px;
-            background: rgba(255,0,0,0.08);
-            border: 1px solid rgba(255,0,0,0.18);
-            border-radius: 7px;
-            display: flex; align-items: center; justify-content: center;
-            color: #ff0000;
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-        .cap-text strong {
-            display: block;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.68rem;
-            letter-spacing: 1.2px;
-            color: #ddd;
-            text-transform: uppercase;
-            margin-bottom: 0.3rem;
-        }
-        .cap-text span {
-            font-size: 0.78rem;
-            color: #555;
-            line-height: 1.5;
-        }
-
-        /* ── CTA ── */
-        .tools-cta-section {
-            padding: 5rem 5%;
-            background: #1a1a1a;
-            border-top: 4px solid #222;
-            text-align: center;
-        }
-        .tools-cta-inner {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        .tools-cta-inner h2 {
-            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
-            color: #fff;
-            margin-bottom: 1rem;
-            letter-spacing: 2px;
-        }
-        .tools-cta-inner h2 span { color: #ff0000; }
-        .tools-cta-inner p {
-            color: #666;
-            font-size: 0.9rem;
-            line-height: 1.7;
-            margin-bottom: 2rem;
-        }
-        .tools-cta-btns {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .tools-stats-inner { grid-template-columns: repeat(2, 1fr); }
-            .tools-auth-inner  { flex-direction: column; align-items: flex-start; }
-            .ftc-tools-grid    { grid-template-columns: 1fr; }
-            .tools-caps-grid   { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 500px) {
-            .tools-caps-grid   { grid-template-columns: 1fr; }
-            .tools-stats-inner { grid-template-columns: repeat(2, 1fr); }
-        }
-    </style>
 </head>
 <body>
 
@@ -603,9 +31,7 @@
     </header>
 
     <!-- ══ HERO ══ -->
-    <section class="tools-hero">
-        <i class="fas fa-cog tools-hero-gear"></i>
-        <i class="fas fa-cog tools-hero-gear-sm"></i>
+    <section class="page-hero tools-hero">
         <div class="tools-hero-content">
             <div class="tools-hero-eyebrow">Metal Maniacs</div>
             <h1>FTC <span>TOOL SUITE</span></h1>
@@ -622,7 +48,7 @@
     </section>
 
     <!-- ══ STAT STRIP ══ -->
-    <div class="tools-stats-strip">
+    <div class="section tools-stats-strip">
         <div class="tools-stats-inner">
             <div>
                 <div class="tstat-num">4</div>
@@ -643,25 +69,8 @@
         </div>
     </div>
 
-    <!-- ══ AUTH BANNER ══ -->
-    <div class="tools-auth-banner">
-        <div class="tools-auth-inner">
-            <div class="tools-auth-copy">
-                <div class="tools-auth-copy-icon"><i class="fas fa-users"></i></div>
-                <div class="tools-auth-copy-text">
-                    <strong>Your work, saved to your team</strong>
-                    <span>Sign in to save progress, share with teammates, and pick up right where you left off.</span>
-                </div>
-            </div>
-            <div class="tools-auth-btns">
-                <a href="/tools/signin" class="tauth-btn primary"><i class="fas fa-sign-in-alt"></i> Sign In</a>
-                <a href="/tools/signup" class="tauth-btn ghost"><i class="fas fa-user-plus"></i> Create Account</a>
-            </div>
-        </div>
-    </div>
-
     <!-- ══ TOOLS GRID ══ -->
-    <section class="ftc-tools-section" id="tools">
+    <section class="section ftc-tools-section" id="tools">
         <div class="tools-section-header">
             <div class="tools-section-label">The Suite</div>
             <div class="tools-section-title">Available Tools</div>
@@ -687,7 +96,6 @@
                 </ul>
                 <hr class="ftc-card-divider">
                 <div class="ftc-card-footer">
-                    <span class="ftc-card-badge ftc-badge-free"><i class="fas fa-check" style="margin-right:.3rem;"></i>Free</span>
                     <a href="/tools/competition" class="ftc-card-btn"><i class="fas fa-arrow-right"></i> Open Tool</a>
                 </div>
             </div>
@@ -709,7 +117,6 @@
                 </ul>
                 <hr class="ftc-card-divider">
                 <div class="ftc-card-footer">
-                    <span class="ftc-card-badge ftc-badge-free"><i class="fas fa-check" style="margin-right:.3rem;"></i>Free</span>
                     <a href="/tools/competition/jeopardy" class="ftc-card-btn"><i class="fas fa-play"></i> Open Tool</a>
                 </div>
             </div>
@@ -731,7 +138,6 @@
                 </ul>
                 <hr class="ftc-card-divider">
                 <div class="ftc-card-footer">
-                    <span class="ftc-card-badge ftc-badge-free"><i class="fas fa-check" style="margin-right:.3rem;"></i>Free</span>
                     <a href="/tools/competition/scheduler" class="ftc-card-btn"><i class="fas fa-calendar-alt"></i> Open Tool</a>
                 </div>
             </div>
@@ -753,7 +159,6 @@
                 </ul>
                 <hr class="ftc-card-divider">
                 <div class="ftc-card-footer">
-                    <span class="ftc-card-badge ftc-badge-free"><i class="fas fa-check" style="margin-right:.3rem;"></i>Free</span>
                     <a href="/tools/competition/notebook" class="ftc-card-btn"><i class="fas fa-pen-to-square"></i> Open Tool</a>
                 </div>
             </div>
@@ -762,7 +167,7 @@
     </section>
 
     <!-- ══ HOW TEAMS WORK ══ -->
-    <section class="tools-teams-section">
+    <section class="section tools-teams-section">
         <div class="tools-section-header">
             <div class="tools-section-label">Getting Started</div>
             <div class="tools-section-title">How Teams Work</div>
@@ -803,7 +208,7 @@
 
         </div>
 
-        <div class="tools-teams-extra">
+        <div class="section tools-teams-extra">
             <div class="teams-extra-item">
                 <i class="fas fa-code-branch"></i>
                 <div>
@@ -829,7 +234,7 @@
     </section>
 
     <!-- ══ CAPABILITIES STRIP ══ -->
-    <section class="tools-caps-section">
+    <section class="section tools-caps-section">
         <div class="tools-section-header">
             <div class="tools-section-label">What's Included</div>
             <div class="tools-section-title">Built for FTC Teams</div>
@@ -897,13 +302,12 @@
     </section>
 
     <!-- ══ CTA ══ -->
-    <section class="tools-cta-section">
+    <section class="section tools-cta-section">
         <div class="tools-cta-inner">
             <h2>READY TO <span>GET STARTED?</span></h2>
             <p>Create a free account, start or join a team, and every tool in the suite is available immediately — no subscriptions, no waiting.</p>
             <div class="tools-cta-btns">
-                <a href="/tools/signup" class="btn primary"><i class="fas fa-user-plus" style="margin-right:.4rem;"></i> Create Free Account</a>
-                <a href="/tools/signin" class="btn secondary"><i class="fas fa-sign-in-alt" style="margin-right:.4rem;"></i> Sign In</a>
+                <a href="/tools/competition" class="btn primary"><i class="fas fa-user-plus" style="margin-right:.4rem;"></i> Create Free Account</a>
             </div>
         </div>
     </section>
@@ -943,5 +347,6 @@
         </div>
     </footer>
 
+    <script src="/scroll-animations.js" defer></script>
 </body>
 </html>

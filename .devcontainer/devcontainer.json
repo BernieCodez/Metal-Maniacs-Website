@@ -3,7 +3,8 @@
     "portsAttributes": {
       "3000": {
         "visibility": "public",
-        "label": "Metal Maniacs Website"
+        "label": "Metal Maniacs Website",
+        "onAutoForward": "openBrowserOnce"
       }
     }
   }
