@@ -1,0 +1,22 @@
+{
+  "name": "metal-maniacs-website",
+  "version": "1.0.0",
+  "description": "Metal Maniacs FTC Robotics Team Website",
+  "main": "server.js",
+  "scripts": {
+    "start": "bash start.sh",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "dotenv": "^17.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "nodemailer": "^8.0.1",
+    "pdf-parse": "^2.4.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

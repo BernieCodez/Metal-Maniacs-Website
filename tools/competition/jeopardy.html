@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Manual Jeopardy — FTC Tools</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/tools/competition/competition.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    /* ── Tool Picker ── */
+    .tool-section { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+    .tool-section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: .75rem;
+      letter-spacing: 2.5px;
+      color: var(--red);
+      margin-bottom: 1.5rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+
+    /* ── Team Select ── */
+    .team-select-bar {
+      display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: 2rem;
+    }
+
+    /* ── Upload card ── */
+    .upload-zone {
+      background: #1a1a1a;
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 2.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      margin-bottom: 1.5rem;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--red);
+      background: rgba(255,0,0,.04);
+    }
+    .upload-zone i { font-size: 2.5rem; color: var(--text-muted); margin-bottom: .75rem; }
+    .upload-zone p { color: #aaa; margin: .3rem 0 0; font-size: .85rem; }
+    #pdf-input { display: none; }
+
+    /* ── Game list ── */
+    .game-list { display: flex; flex-direction: column; gap: .75rem; margin-bottom: 2rem; }
+    .game-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .9rem 1.2rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .game-item-info { flex: 1; min-width: 0; }
+    .game-item-title { font-size: .95rem; color: #eee; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .game-item-meta { font-size: .72rem; color: var(--text-muted); margin-top: .2rem; }
+
+    /* ── Jeopardy board ── */
+    #board-wrap { display: none; }
+    .board-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .board-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.4rem;
+      color: var(--yellow);
+      letter-spacing: 3px;
+    }
+    .jeopardy-board {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-bottom: 1.5rem;
+    }
+    .j-cell {
+      background: #1c3a6e;
+      border: 2px solid #2050a8;
+      border-radius: 6px;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+      text-align: center;
+      padding: .5rem;
+    }
+    .j-cell:hover:not(.used) { background: #244a8c; transform: scale(1.02); }
+    .j-cell.header {
+      background: #0d1f4a;
+      border-color: #1a3578;
+      cursor: default;
+      min-height: 55px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: .65rem;
+      letter-spacing: 1.5px;
+      color: #7eb3ff;
+    }
+    .j-cell.header:hover { transform: none; background: #0d1f4a; }
+    .j-cell.value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--yellow);
+    }
+    .j-cell.used {
+      background: #111;
+      border-color: #222;
+      cursor: default;
+    }
+    .j-cell.used .j-val { opacity: 0; }
+
+    /* ── Score board ── */
+    .scoreboard {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+      justify-content: center;
+    }
+    .score-card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: .75rem 1.5rem;
+      text-align: center;
+      min-width: 130px;
+      position: relative;
+    }
+    .score-card.active { border-color: var(--yellow); }
+    .score-name {
+      font-size: .75rem;
+      color: var(--text-muted);
+      margin-bottom: .25rem;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .score-val {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.4rem;
+      color: var(--green);
+    }
+    .score-val.negative { color: #f87171; }
+
+    /* ── Clue modal ── */
+    .clue-modal-box {
+      max-width: 600px;
+      text-align: center;
+    }
+    .clue-category-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: .65rem;
+      letter-spacing: 2px;
+      color: #7eb3ff;
+      margin-bottom: .5rem;
+    }
+    .clue-value-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem;
+      color: var(--yellow);
+      margin-bottom: 1rem;
+    }
+    .clue-text {
+      font-size: 1.05rem;
+      color: #eee;
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+    .answer-reveal {
+      background: #0d1f4a;
+      border: 1px solid #2050a8;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: .95rem;
+      color: var(--yellow);
+      font-weight: 600;
+      display: none;
+    }
+    .score-buttons {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+    .player-score-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: .4rem .8rem;
+      color: #ccc;
+      font-size: .78rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: .3rem;
+      transition: background .15s;
+    }
+    .player-score-btn:hover { background: #333; }
+    .player-score-btn.correct { border-color: var(--green); color: var(--green); }
+    .player-score-btn.wrong   { border-color: #f87171; color: #f87171; }
+  </style>
+</head>
+<body>
+
+<header class="comp-header">
+  <a href="/" class="comp-header-logo">METAL <span>MANIACS</span></a>
+  <div class="comp-header-title"><i class="fas fa-gamepad"></i> FTC TOOLS</div>
+  <div class="comp-header-right">
+    <a href="/tools/competition/dashboard" class="cbtn cbtn-ghost cbtn-sm"><i class="fas fa-table-columns"></i> Dashboard</a>
+    <div id="user-pill" class="comp-auth-pill member" style="cursor:default;">
+      <div class="dot"></div>
+      <span id="user-pill-label">…</span>
+    </div>
+  </div>
+</header>
+
+<!-- Setup View -->
+<div id="setup-view" class="tool-section">
+
+  <div class="tool-section-title"><i class="fas fa-question-circle"></i> GAME MANUAL JEOPARDY</div>
+
+  <div class="team-select-bar">
+    <div class="form-field" style="flex:1;min-width:200px;">
+      <label class="form-label">Your Team</label>
+      <select id="team-select" class="cselect" onchange="onTeamChange()">
+        <option value="">— select a team —</option>
+      </select>
+    </div>
+    <button class="cbtn cbtn-ghost" onclick="showNewTeamModal()"><i class="fas fa-plus"></i> New Team</button>
+    <button class="cbtn cbtn-ghost" onclick="showJoinTeamModal()"><i class="fas fa-link"></i> Join Team</button>
+  </div>
+
+  <!-- Upload -->
+  <div id="upload-section" style="display:none;">
+    <div class="comp-card">
+      <div class="comp-card-title"><i class="fas fa-file-pdf"></i> UPLOAD GAME MANUAL</div>
+      <div class="upload-zone" id="drop-zone" onclick="document.getElementById('pdf-input').click()">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <div style="font-size:1rem;color:#ccc;margin:.5rem 0;">Drop your PDF here or click to browse</div>
+        <p>FTC Season Game Manual — text-based PDF, up to 20 MB</p>
+      </div>
+      <input type="file" id="pdf-input" accept="application/pdf">
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Game Set Title (optional)</label>
+          <input type="text" id="game-title" class="cinput" placeholder="e.g. INTO THE DEEP 2025">
+        </div>
+        <button id="upload-btn" class="cbtn cbtn-red" onclick="uploadPDF()" style="height:fit-content;margin-bottom:0;align-self:flex-end;" disabled>
+          <i class="fas fa-bolt"></i> Generate Questions
+        </button>
+      </div>
+      <div id="upload-status" style="display:none;" class="comp-card" style="padding:.75rem;">
+        <i class="fas fa-spinner fa-spin"></i> <span id="upload-status-text">Parsing PDF…</span>
+      </div>
+    </div>
+
+    <!-- Saved game sets -->
+    <div id="game-list-section" style="display:none;">
+      <div class="comp-card-title" style="font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:2px;color:var(--red);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;">
+        <i class="fas fa-list"></i> SAVED GAME SETS
+      </div>
+      <div id="game-list" class="game-list"></div>
+    </div>
+
+    <!-- Players -->
+    <div class="comp-card" style="margin-top:1rem;">
+      <div class="comp-card-title"><i class="fas fa-users"></i> PLAYERS</div>
+      <p style="font-size:.82rem;color:#aaa;margin-bottom:.75rem;">Add player names for scorekeeping (min 1).</p>
+      <div class="form-row" style="margin-bottom:.5rem;">
+        <input type="text" id="player-input" class="cinput" placeholder="Player name…" style="flex:1;" onkeydown="if(event.key==='Enter')addPlayer()">
+        <button class="cbtn cbtn-ghost" onclick="addPlayer()"><i class="fas fa-plus"></i></button>
+      </div>
+      <div id="player-list" style="display:flex;gap:.5rem;flex-wrap:wrap;min-height:32px;"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Board View -->
+<div id="board-view" style="display:none;padding:1.5rem 2%;max-width:1200px;margin:0 auto;">
+  <div class="board-header">
+    <div class="board-title" id="board-game-title">JEOPARDY!</div>
+    <div style="font-size:.72rem;color:#aaa;margin-top:.3rem;font-family:'Orbitron',sans-serif;letter-spacing:1px;" id="board-team-name"></div>
+  </div>
+
+  <div class="scoreboard" id="scoreboard"></div>
+
+  <div id="jeopardy-board" class="jeopardy-board"></div>
+
+  <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;margin-top:.5rem;">
+    <button class="cbtn cbtn-ghost" onclick="resetBoard()"><i class="fas fa-redo"></i> Reset Board</button>
+    <button class="cbtn cbtn-ghost" onclick="exitBoard()"><i class="fas fa-arrow-left"></i> Back to Setup</button>
+  </div>
+</div>
+
+<!-- Clue Modal -->
+<div class="modal-overlay hidden" id="clue-modal">
+  <div class="modal-box clue-modal-box">
+    <button class="modal-close" onclick="closeClueModal()"><i class="fas fa-times"></i></button>
+    <div class="clue-category-label" id="clue-cat"></div>
+    <div class="clue-value-label" id="clue-val"></div>
+    <div class="clue-text" id="clue-text"></div>
+    <button class="cbtn cbtn-yellow" onclick="revealAnswer()"><i class="fas fa-eye"></i> Reveal Answer</button>
+    <div class="answer-reveal" id="answer-reveal">Answer: <span id="clue-answer"></span></div>
+    <div class="score-buttons" id="score-buttons"></div>
+  </div>
+</div>
+
+<!-- New Team Modal -->
+<div class="modal-overlay hidden" id="new-team-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('new-team-modal')"><i class="fas fa-times"></i></button>
+    <div class="modal-title"><i class="fas fa-users"></i> CREATE TEAM</div>
+    <div class="form-field" style="margin-bottom:1rem;">
+      <label class="form-label">Team Name</label>
+      <input type="text" id="new-team-name" class="cinput" placeholder="e.g. Metal Maniacs 10355">
+    </div>
+    <button class="cbtn cbtn-red" style="width:100%;" onclick="createTeam()">Create Team</button>
+    <div id="new-team-err" class="form-label" style="color:#f87171;margin-top:.5rem;display:none;"></div>
+  </div>
+</div>
+
+<!-- Join Team Modal -->
+<div class="modal-overlay hidden" id="join-team-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('join-team-modal')"><i class="fas fa-times"></i></button>
+    <div class="modal-title"><i class="fas fa-link"></i> JOIN TEAM</div>
+    <div class="form-field" style="margin-bottom:1rem;">
+      <label class="form-label">Invite Code</label>
+      <input type="text" id="join-team-code" class="cinput" placeholder="6-character code">
+    </div>
+    <button class="cbtn cbtn-red" style="width:100%;" onclick="joinTeam()">Join Team</button>
+    <div id="join-team-err" class="form-label" style="color:#f87171;margin-top:.5rem;display:none;"></div>
+  </div>
+</div>
+
+<script src="/tools/competition/auth.js"></script>
+<script>
+  let currentUser = null;
+  let currentTeam = null;
+  let currentGame = null;  // { id, title, questions[] }
+  let players     = [];    // [{ name, score }]
+  let activeClueCell = null; // { rowIdx, colIdx }
+
+  /* ── Init ── */
+  window.addEventListener('DOMContentLoaded', async () => {
+    currentUser = requireAuth();
+    if (!currentUser) return;
+    document.getElementById('user-pill-label').textContent = currentUser.name;
+    await loadTeams();
+    setupDragDrop();
+  });
+
+  /* ── Teams ── */
+  async function loadTeams() {
+    const res = await apiFetch('/api/teams');
+    if (!res) return;
+    const teams = await res.json();
+    const sel = document.getElementById('team-select');
+    sel.innerHTML = '<option value="">— select a team —</option>';
+    teams.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = t.name + (t.my_role === 'owner' ? ' (owner)' : '');
+      sel.appendChild(opt);
+    });
+    if (teams.length) {
+      // Restore the dashboard-selected default team, or last used
+      const saved = localStorage.getItem('mm_default_team');
+      let savedId = null;
+      try { savedId = JSON.parse(saved)?.id; } catch {}
+      const match = teams.find(t => t.id === savedId);
+      if (match) {
+        sel.value = match.id;
+        await onTeamChange();
+      }
+    }
+  }
+
+  async function onTeamChange() {
+    const id = document.getElementById('team-select').value;
+    if (!id) { document.getElementById('upload-section').style.display = 'none'; currentTeam = null; return; }
+    localStorage.setItem('mm_default_team', JSON.stringify({ id, name: currentTeam?.name || id }));
+    const res = await apiFetch(`/api/teams/${id}`);
+    if (!res) return;
+    currentTeam = await res.json();
+    document.getElementById('upload-section').style.display = 'block';
+    await loadGames();
+  }
+
+  async function loadGames() {
+    if (!currentTeam) return;
+    const res = await apiFetch(`/api/teams/${currentTeam.id}/jeopardy`);
+    if (!res) return;
+    const games = await res.json();
+    const section = document.getElementById('game-list-section');
+    const list    = document.getElementById('game-list');
+    if (!games.length) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    list.innerHTML = games.map(g => `
+      <div class="game-item">
+        <div class="game-item-info">
+          <div class="game-item-title">${escHtml(g.title)}</div>
+          <div class="game-item-meta"><i class="fas fa-calendar"></i> ${fmtDate(g.created_at)}</div>
+        </div>
+        <div style="display:flex;gap:.5rem;">
+          <button class="cbtn cbtn-red cbtn-sm" onclick="startGame('${g.id}')"><i class="fas fa-play"></i> Play</button>
+          <button class="icon-btn danger" onclick="deleteGame('${g.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>`).join('');
+  }
+
+  /* ── Upload ── */
+  function setupDragDrop() {
+    const zone  = document.getElementById('drop-zone');
+    const input = document.getElementById('pdf-input');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) { input.files = e.dataTransfer.files; onFileSelect(); }
+    });
+    input.addEventListener('change', onFileSelect);
+  }
+
+  function onFileSelect() {
+    const f = document.getElementById('pdf-input').files[0];
+    const btn = document.getElementById('upload-btn');
+    if (!f) { btn.disabled = true; return; }
+    btn.disabled = false;
+    const drop = document.getElementById('drop-zone');
+    drop.querySelector('div').textContent = f.name;
+    if (!document.getElementById('game-title').value.trim()) {
+      document.getElementById('game-title').value = f.name.replace(/\.pdf$/i, '');
+    }
+  }
+
+  async function uploadPDF() {
+    if (!currentTeam) { alert('Select a team first.'); return; }
+    const input = document.getElementById('pdf-input');
+    const file  = input.files[0];
+    if (!file) { alert('Please select a PDF file.'); return; }
+
+    const statusEl = document.getElementById('upload-status');
+    const statusTxt = document.getElementById('upload-status-text');
+    statusEl.style.display = 'block';
+    statusTxt.textContent = 'Parsing PDF and generating questions…';
+
+    const formData = new FormData();
+    formData.append('pdf', file);
+    const titleVal = document.getElementById('game-title').value.trim();
+    if (titleVal) formData.append('title', titleVal);
+
+    const token = getJWT();
+    try {
+      const res = await fetch(`/api/teams/${currentTeam.id}/jeopardy/upload`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formData
+      });
+      const data = await res.json();
+      statusEl.style.display = 'none';
+      if (!res.ok) { alert(data.error || 'Upload failed.'); return; }
+      currentGame = data;
+      await loadGames();
+      startGame(data.id);
+    } catch (e) {
+      statusEl.style.display = 'none';
+      alert('Upload error: ' + e.message);
+    }
+  }
+
+  async function deleteGame(id) {
+    if (!confirm('Delete this game set?')) return;
+    const res = await apiFetch(`/api/teams/${currentTeam.id}/jeopardy/${id}`, { method: 'DELETE' });
+    if (res?.ok) await loadGames();
+  }
+
+  /* ── Players ── */
+  function addPlayer() {
+    const input = document.getElementById('player-input');
+    const name  = input.value.trim();
+    if (!name) return;
+    players.push({ name, score: 0 });
+    input.value = '';
+    renderPlayerList();
+  }
+
+  function removePlayer(i) {
+    players.splice(i, 1);
+    renderPlayerList();
+  }
+
+  function renderPlayerList() {
+    const el = document.getElementById('player-list');
+    el.innerHTML = players.map((p, i) => `
+      <span class="badge badge-gray" style="gap:.5rem;">
+        ${escHtml(p.name)}
+        <span style="cursor:pointer;opacity:.6;font-size:.8rem;" onclick="removePlayer(${i})">&times;</span>
+      </span>`).join('');
+  }
+
+  /* ── Start Game ── */
+  async function startGame(gameId) {
+    if (!currentTeam) return;
+    // Ensure we have at least one player
+    if (!players.length) {
+      const name = prompt('Enter at least one player name:');
+      if (!name?.trim()) return;
+      players.push({ name: name.trim(), score: 0 });
+      renderPlayerList();
+    }
+
+    const res = await apiFetch(`/api/teams/${currentTeam.id}/jeopardy/${gameId}`);
+    if (!res) return;
+    currentGame = await res.json();
+
+    // Reset scores
+    players.forEach(p => p.score = 0);
+    buildBoard();
+    document.getElementById('setup-view').style.display = 'none';
+    document.getElementById('board-view').style.display  = 'block';
+  }
+
+  function buildBoard() {
+    const qs = currentGame.questions;
+    // Derive categories from questions
+    const catOrder = [];
+    const catMap   = {};
+    qs.forEach(q => {
+      if (!catMap[q.category]) { catMap[q.category] = []; catOrder.push(q.category); }
+      catMap[q.category].push(q);
+    });
+
+    document.getElementById('board-game-title').textContent = currentGame.title.toUpperCase();
+    document.getElementById('board-team-name').textContent  = currentTeam?.name || '';
+
+    const board = document.getElementById('jeopardy-board');
+    const numCols = catOrder.length;
+    board.style.gridTemplateColumns = `repeat(${numCols}, 1fr)`;
+
+    // Get max rows
+    const maxRows = Math.max(...catOrder.map(c => catMap[c].length));
+
+    // Build 2D array: rows = value tiers, cols = categories
+    let html = '';
+    // Header row
+    catOrder.forEach(cat => {
+      html += `<div class="j-cell header">${escHtml(cat)}</div>`;
+    });
+    // Value rows
+    for (let row = 0; row < maxRows; row++) {
+      catOrder.forEach((cat, col) => {
+        const q = catMap[cat][row];
+        if (!q) {
+          html += `<div class="j-cell used"></div>`;
+        } else {
+          html += `<div class="j-cell value" data-qid="${q.id}" onclick="openClue('${escAttr(q.id)}')">
+            <span class="j-val">$${q.value}</span>
+          </div>`;
+        }
+      });
+    }
+
+    board.innerHTML   = html;
+    board._catOrder   = catOrder;
+    board._catMap     = catMap;
+    board._questions  = {};
+    qs.forEach(q => { board._questions[q.id] = q; });
+
+    renderScoreboard();
+  }
+
+  function renderScoreboard() {
+    document.getElementById('scoreboard').innerHTML = players.map((p, i) =>
+      `<div class="score-card" id="sc-${i}">
+        <div class="score-name">${escHtml(p.name)}</div>
+        <div class="score-val ${p.score < 0 ? 'negative' : ''}">${p.score < 0 ? '-' : ''}$${Math.abs(p.score)}</div>
+      </div>`
+    ).join('');
+  }
+
+  /* ── Clue Modal ── */
+  let _currentQ = null;
+
+  function openClue(qid) {
+    const board = document.getElementById('jeopardy-board');
+    const q     = board._questions[qid];
+    if (!q) return;
+    _currentQ  = q;
+
+    document.getElementById('clue-cat').textContent    = q.category;
+    document.getElementById('clue-val').textContent    = '$' + q.value;
+    document.getElementById('clue-text').textContent   = q.clue;
+    document.getElementById('clue-answer').textContent = q.answer;
+    document.getElementById('answer-reveal').style.display = 'none';
+
+    // Score buttons
+    document.getElementById('score-buttons').innerHTML = `
+      ${players.map((p, i) => `
+        <button class="player-score-btn correct" onclick="scorePlayer(${i},true)">
+          <i class="fas fa-check"></i> ${escHtml(p.name)} +$${q.value}
+        </button>
+        <button class="player-score-btn wrong" onclick="scorePlayer(${i},false)">
+          <i class="fas fa-times"></i> ${escHtml(p.name)} -$${q.value}
+        </button>`).join('')}
+      <button class="player-score-btn" style="border-color:var(--text-muted);color:#aaa;" onclick="skipClue()">
+        <i class="fas fa-forward"></i> No one / skip
+      </button>`;
+
+    document.getElementById('clue-modal').classList.remove('hidden');
+  }
+
+  function revealAnswer() {
+    document.getElementById('answer-reveal').style.display = 'block';
+  }
+
+  function scorePlayer(playerIdx, correct) {
+    const q = _currentQ;
+    if (!q) return;
+    players[playerIdx].score += correct ? q.value : -q.value;
+    markCellUsed(q.id);
+    closeClueModal();
+    renderScoreboard();
+  }
+
+  function skipClue() {
+    if (_currentQ) markCellUsed(_currentQ.id);
+    closeClueModal();
+  }
+
+  function markCellUsed(qid) {
+    const cell = document.querySelector(`[data-qid="${qid}"]`);
+    if (cell) { cell.classList.add('used'); cell.onclick = null; }
+  }
+
+  function closeClueModal() {
+    document.getElementById('clue-modal').classList.add('hidden');
+    _currentQ = null;
+  }
+
+  function resetBoard() {
+    if (!confirm('Reset the board and all scores?')) return;
+    players.forEach(p => p.score = 0);
+    buildBoard();
+  }
+
+  function exitBoard() {
+    document.getElementById('board-view').style.display  = 'none';
+    document.getElementById('setup-view').style.display  = 'block';
+  }
+
+  /* ── Team Modals ── */
+  function showNewTeamModal() { document.getElementById('new-team-modal').classList.remove('hidden'); }
+  function showJoinTeamModal() { document.getElementById('join-team-modal').classList.remove('hidden'); }
+  function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+  async function createTeam() {
+    const name = document.getElementById('new-team-name').value.trim();
+    const errEl = document.getElementById('new-team-err');
+    if (!name) { errEl.textContent = 'Team name required.'; errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    const res = await apiFetch('/api/teams', { method: 'POST', body: JSON.stringify({ name }) });
+    if (!res) return;
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+    closeModal('new-team-modal');
+    document.getElementById('new-team-name').value = '';
+    await loadTeams();
+    document.getElementById('team-select').value = data.id;
+    await onTeamChange();
+  }
+
+  async function joinTeam() {
+    const code  = document.getElementById('join-team-code').value.trim();
+    const errEl = document.getElementById('join-team-err');
+    if (!code) { errEl.textContent = 'Code required.'; errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    const res = await apiFetch('/api/teams/join', { method: 'POST', body: JSON.stringify({ code }) });
+    if (!res) return;
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+    closeModal('join-team-modal');
+    document.getElementById('join-team-code').value = '';
+    await loadTeams();
+    document.getElementById('team-select').value = data.team_id;
+    await onTeamChange();
+  }
+
+  /* ── Util ── */
+  function escAttr(s) {
+    return String(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+</script>
+</body>
+</html>

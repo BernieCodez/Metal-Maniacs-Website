@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join Event — Competition Host</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/tools/competition/competition.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+<header class="comp-header">
+  <a href="/" class="comp-header-logo">METAL <span>MANIACS</span></a>
+  <div class="comp-header-title"><i class="fas fa-link"></i> JOIN EVENT</div>
+  <div class="comp-header-right">
+    <a href="/tools/competition/dashboard" class="cbtn cbtn-ghost cbtn-sm"><i class="fas fa-table-columns"></i> Dashboard</a>
+  </div>
+</header>
+
+<div class="auth-page-wrap" style="padding-top:2rem;">
+  <div class="auth-card" style="max-width:480px;">
+
+    <!-- Code entry state -->
+    <div id="state-enter" class="auth-step active">
+      <h1 class="auth-card-title">JOIN A COMPETITION</h1>
+      <p class="auth-card-sub">Enter the invite code shared by the event organizer, or click the invite link in your email.</p>
+      <div class="form-field">
+        <label class="form-label">Invite Code</label>
+        <input type="text" class="cinput" id="code-input" placeholder="e.g. a1b2c3d4e5f6" autocomplete="off" style="font-family:'Orbitron',sans-serif;letter-spacing:2px;text-transform:lowercase;">
+      </div>
+      <div class="auth-err" id="code-err"></div>
+      <button class="cbtn cbtn-red" style="width:100%;justify-content:center;padding:.75rem;margin-top:.25rem;" id="lookup-btn" onclick="lookupCode()">
+        <i class="fas fa-search"></i> Look Up
+      </button>
+    </div>
+
+    <!-- Event preview + accept state -->
+    <div id="state-preview" class="auth-step">
+      <div class="invite-event-card">
+        <div class="invite-badge"><i class="fas fa-envelope-open-text"></i> INVITATION</div>
+        <div id="invite-name" class="invite-event-name"></div>
+        <div id="invite-team" class="invite-event-team"></div>
+        <div id="invite-meta" class="invite-event-meta"></div>
+        <div id="invite-desc" class="invite-event-desc"></div>
+      </div>
+      <div class="auth-err" id="accept-err"></div>
+      <div id="accept-actions">
+        <button class="cbtn cbtn-red" style="width:100%;justify-content:center;padding:.75rem;" id="accept-btn" onclick="acceptInvite()">
+          <i class="fas fa-check"></i> Accept & Join
+        </button>
+        <button class="cbtn cbtn-ghost" style="width:100%;justify-content:center;margin-top:.5rem;" onclick="resetJoin()">
+          Try a different code
+        </button>
+      </div>
+      <div id="already-member-msg" style="display:none;text-align:center;">
+        <p style="color:var(--green);"><i class="fas fa-circle-check"></i> You're already a member of this event.</p>
+        <a id="go-to-event-btn" href="#" class="cbtn cbtn-red" style="display:flex;align-items:center;justify-content:center;gap:.5rem;margin-top:.75rem;text-decoration:none;">
+          <i class="fas fa-arrow-right"></i> Open Event
+        </a>
+      </div>
+    </div>
+
+    <!-- Success state -->
+    <div id="state-success" class="auth-step">
+      <div class="auth-success-icon" style="color:var(--green);"><i class="fas fa-circle-check"></i></div>
+      <h2 style="font-family:'Orbitron',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--green);margin:.5rem 0;">JOINED!</h2>
+      <p class="auth-card-sub">You've joined the event. Redirecting to the competition tool…</p>
+    </div>
+
+  </div>
+</div>
+
+<script src="/tools/competition/auth.js"></script>
+<script>
+  let foundEvent = null;
+
+  window.addEventListener('DOMContentLoaded', () => {
+    // Pre-fill code from URL
+    const params = new URLSearchParams(window.location.search);
+    const code   = params.get('code');
+    if (code) {
+      document.getElementById('code-input').value = code;
+      lookupCode();
+    }
+    document.getElementById('code-input').addEventListener('keydown', e => { if (e.key === 'Enter') lookupCode(); });
+  });
+
+  function showState(id) {
+    document.querySelectorAll('.auth-step').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function showErr(elId, msg) {
+    const el = document.getElementById(elId);
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+  function clearErr(elId) {
+    const el = document.getElementById(elId); el.textContent = ''; el.classList.remove('show');
+  }
+
+  async function lookupCode() {
+    clearErr('code-err');
+    const code = document.getElementById('code-input').value.trim().toLowerCase();
+    if (!code) { showErr('code-err', 'Please enter an invite code.'); return; }
+
+    const btn = document.getElementById('lookup-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Looking up…';
+
+    const token = getJWT();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    const res  = await fetch('/api/invite/' + code, { headers });
+    const data = await res.json();
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-search"></i> Look Up';
+
+    if (!res.ok) { showErr('code-err', data.error || 'Invalid code.'); return; }
+
+    foundEvent = data;
+
+    document.getElementById('invite-name').textContent = data.name;
+    document.getElementById('invite-team').innerHTML   = `<i class="fas fa-users"></i> Hosted by ${escHtml(data.hosting_team)}`;
+    document.getElementById('invite-desc').textContent = data.description || '';
+
+    const meta = [];
+    if (data.event_date) meta.push(`<i class="fas fa-calendar"></i> ${escHtml(data.event_date)}`);
+    if (data.location)   meta.push(`<i class="fas fa-location-dot"></i> ${escHtml(data.location)}`);
+    document.getElementById('invite-meta').innerHTML = meta.join('&nbsp;&nbsp;');
+
+    if (data.already_member) {
+      document.getElementById('accept-actions').style.display  = 'none';
+      document.getElementById('already-member-msg').style.display = 'block';
+      document.getElementById('go-to-event-btn').href = '/tools/competition/event/' + data.id;
+    } else {
+      document.getElementById('accept-actions').style.display  = 'block';
+      document.getElementById('already-member-msg').style.display = 'none';
+    }
+
+    showState('state-preview');
+  }
+
+  async function acceptInvite() {
+    clearErr('accept-err');
+
+    // Must be logged in to accept
+    const user = getCurrentUser();
+    if (!user) {
+      const code   = document.getElementById('code-input').value.trim();
+      const redirect = encodeURIComponent('/tools/competition/join?code=' + code);
+      window.location.href = '/tools/competition/login?redirect=' + redirect;
+      return;
+    }
+
+    const btn = document.getElementById('accept-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Joining…';
+
+    const res  = await apiFetch('/api/invite/' + foundEvent.invite_code, { method: 'POST' });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showErr('accept-err', data.error || 'Failed to join event.');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-check"></i> Accept & Join';
+      return;
+    }
+
+    showState('state-success');
+    setTimeout(() => window.location.replace('/tools/competition/event/' + data.event_id), 1500);
+  }
+
+  function resetJoin() {
+    foundEvent = null;
+    showState('state-enter');
+  }
+</script>
+</body>
+</html>

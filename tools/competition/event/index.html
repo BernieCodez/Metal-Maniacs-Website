@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competition Host</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/tools/competition/competition.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="comp-header">
+  <a href="/" class="comp-header-logo">METAL <span>MANIACS</span></a>
+  <div class="comp-header-title" id="header-event-name">
+    <i class="fas fa-trophy"></i> LOADING…
+  </div>
+  <div class="comp-header-right" style="gap:.75rem;">
+    <span id="save-status" class="save-status"></span>
+    <a href="/tools/competition/dashboard" class="cbtn cbtn-ghost cbtn-sm"><i class="fas fa-table-columns"></i> Dashboard</a>
+    <button class="cbtn cbtn-ghost cbtn-sm" id="share-btn" onclick="shareGuestLink()" title="Share public view link"><i class="fas fa-share-nodes"></i> Share</button>
+    <button class="cbtn cbtn-ghost cbtn-sm" id="leave-btn" onclick="leaveEvent()" title="Leave event" style="display:none;"><i class="fas fa-right-from-bracket"></i> Leave</button>
+    <div id="auth-pill" class="comp-auth-pill member" style="cursor:default;">
+      <div class="dot"></div>
+      <span id="auth-pill-label">…</span>
+    </div>
+    <button class="cbtn cbtn-ghost cbtn-sm" onclick="clearAuth(); window.location.href='/tools/competition/login';" title="Sign out"><i class="fas fa-sign-out-alt"></i></button>
+  </div>
+</header>
+
+<!-- BANNER STRIP -->
+<div id="banner-strip"></div>
+
+<!-- STATUS BAR -->
+<div id="status-bar">
+  <div class="stat-pill"><i class="fas fa-clock"></i> <span>Time</span> <strong id="clock-display">--:--</strong></div>
+  <div class="stat-pill"><i class="fas fa-users"></i> <span>Teams</span> <strong id="teams-display">0</strong></div>
+  <div class="stat-pill"><i class="fas fa-flag-checkered"></i> <span>Matches</span> <strong id="matches-display">0</strong></div>
+  <div class="stat-pill" id="hosting-pill" style="margin-left:auto;">
+    <i class="fas fa-shield-halved" style="color:var(--red);"></i>
+    <span id="hosting-team-label" style="color:var(--text-muted);font-size:.75rem;"></span>
+  </div>
+</div>
+
+<!-- TABS -->
+<nav id="comp-nav">
+  <button class="comp-tab active" data-tab="schedule"    onclick="switchTab('schedule',this)"><i class="fas fa-calendar-alt"></i> Schedule</button>
+  <button class="comp-tab"        data-tab="queue"       onclick="switchTab('queue',this)"><i class="fas fa-list-ol"></i> Queue</button>
+  <button class="comp-tab"        data-tab="volunteers"  onclick="switchTab('volunteers',this)"><i class="fas fa-people-group"></i> Volunteers</button>
+  <button class="comp-tab"        data-tab="map"         onclick="switchTab('map',this)"><i class="fas fa-map-marked-alt"></i> Map</button>
+  <button class="comp-tab"        data-tab="leaderboard" onclick="switchTab('leaderboard',this)"><i class="fas fa-ranking-star"></i> Leaderboard</button>
+  <button class="comp-tab"        data-tab="packing"     onclick="switchTab('packing',this)"><i class="fas fa-box-open"></i> Packing</button>
+  <button class="comp-tab"        data-tab="members"     onclick="switchTab('members',this)"><i class="fas fa-user-group"></i> Members</button>
+</nav>
+
+<!-- PANELS -->
+<div id="comp-body">
+
+  <!-- SCHEDULE -->
+  <div id="panel-schedule" class="tab-panel active">
+    <div class="section-toolbar">
+      <h2 class="comp-section-header" style="margin:0;border:none;padding:0;">EVENT SCHEDULE</h2>
+      <div id="schedule-member-tools" style="display:none;gap:.5rem;flex-wrap:wrap;" class="section-toolbar">
+        <button class="cbtn cbtn-red" onclick="openAddScheduleModal()"><i class="fas fa-plus"></i> Add Event</button>
+        <input type="number" id="teams-input"   class="cinput" style="width:130px;" placeholder="# of Teams"   min="1" onchange="saveTeamCount(this.value)">
+        <input type="number" id="matches-input" class="cinput" style="width:140px;" placeholder="# of Matches" min="1" onchange="saveMatchCount(this.value)">
+        <button class="cbtn cbtn-ghost" onclick="openBannerModal()"><i class="fas fa-bullhorn"></i> Announce</button>
+      </div>
+    </div>
+    <div id="guest-schedule-notice" class="guest-notice"><i class="fas fa-info-circle"></i> Viewing as guest — you don't have edit access to this event.</div>
+    <div id="schedule-list" class="schedule-list"></div>
+  </div>
+
+  <!-- QUEUE -->
+  <div id="panel-queue" class="tab-panel">
+    <div class="section-toolbar">
+      <h2 class="comp-section-header" style="margin:0;border:none;padding:0;">MATCH QUEUE</h2>
+      <div id="queue-member-tools" style="display:none;gap:.5rem;flex-wrap:wrap;" class="section-toolbar">
+        <button class="cbtn cbtn-red" onclick="openAddQueueModal()"><i class="fas fa-plus"></i> Add Team</button>
+      </div>
+    </div>
+    <div id="guest-queue-notice" class="guest-notice"><i class="fas fa-info-circle"></i> Viewing as guest — join as a member to manage the queue.</div>
+    <div style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+      <div class="comp-card" style="flex:1;min-width:100px;text-align:center;padding:.75rem;">
+        <div style="font-size:.65rem;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:.25rem;font-family:'Orbitron',sans-serif;">NEEDS QUEUE</div>
+        <div id="q-needs-count"    style="font-family:'Orbitron',sans-serif;font-size:1.5rem;color:var(--orange);">0</div>
+      </div>
+      <div class="comp-card" style="flex:1;min-width:100px;text-align:center;padding:.75rem;">
+        <div style="font-size:.65rem;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:.25rem;font-family:'Orbitron',sans-serif;">IN QUEUE</div>
+        <div id="q-inqueue-count"  style="font-family:'Orbitron',sans-serif;font-size:1.5rem;color:var(--blue);">0</div>
+      </div>
+      <div class="comp-card" style="flex:1;min-width:100px;text-align:center;padding:.75rem;">
+        <div style="font-size:.65rem;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:.25rem;font-family:'Orbitron',sans-serif;">CHECKED IN</div>
+        <div id="q-checkedin-count" style="font-family:'Orbitron',sans-serif;font-size:1.5rem;color:var(--green);">0</div>
+      </div>
+    </div>
+    <div id="queue-list" class="queue-grid"></div>
+  </div>
+
+  <!-- VOLUNTEERS -->
+  <div id="panel-volunteers" class="tab-panel">
+    <div id="vol-member-view">
+      <div class="section-toolbar">
+        <h2 class="comp-section-header" style="margin:0;border:none;padding:0;">VOLUNTEER ROSTER</h2>
+        <button class="cbtn cbtn-red" onclick="openAddVolModal()"><i class="fas fa-user-plus"></i> Add Volunteer</button>
+      </div>
+      <div id="vol-stats" style="display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap;">
+        <div class="badge badge-gray"><span id="vol-total">0</span> Total</div>
+        <div class="badge badge-green"><span id="vol-present">0</span> Present</div>
+        <div class="badge badge-orange"><span id="vol-left">0</span> Left</div>
+        <div class="badge badge-red"><span id="vol-absent">0</span> Not Arrived</div>
+      </div>
+      <div id="vol-list" class="vol-list"></div>
+    </div>
+    <div id="vol-guest-view" class="member-only-panel-notice" style="display:none;">
+      <i class="fas fa-lock"></i><h3>MEMBERS ONLY</h3>
+      <p>You need to be an invited member of this event to access the volunteer roster.</p>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div id="panel-map" class="tab-panel">
+    <div class="section-toolbar">
+      <h2 class="comp-section-header" style="margin:0;border:none;padding:0;">VENUE MAP</h2>
+      <div id="map-member-tools" style="display:none;gap:.5rem;flex-wrap:wrap;" class="section-toolbar">
+        <label class="cbtn cbtn-blue" style="cursor:pointer;">
+          <i class="fas fa-upload"></i> Upload Map
+          <input type="file" id="map-upload" accept="image/*" style="display:none;" onchange="handleMapUpload(this)">
+        </label>
+        <button class="cbtn cbtn-ghost" id="pin-mode-btn" onclick="togglePinMode()"><i class="fas fa-map-pin"></i> Add Pin</button>
+        <button class="cbtn cbtn-danger" onclick="clearMap()"><i class="fas fa-trash"></i> Clear Map</button>
+      </div>
+    </div>
+    <div id="guest-map-notice" class="guest-notice"><i class="fas fa-info-circle"></i> Viewing as guest — join as a member to upload maps and place pins.</div>
+    <div id="map-pin-mode-notice" style="display:none;" class="guest-notice">
+      <i class="fas fa-crosshairs"></i> <strong>Pin Mode Active</strong> — Click anywhere on the map to place a pin. Press Esc to exit.
+    </div>
+    <div id="map-container" onclick="handleMapClick(event)">
+      <img id="map-image" src="" alt="" style="display:none;">
+      <div id="map-empty-state">
+        <i class="fas fa-map"></i>
+        <p style="color:var(--text-muted);font-size:.9rem;">No map uploaded yet.</p>
+        <p style="color:#555;font-size:.78rem;margin-top:.3rem;">Members can upload a venue map image.</p>
+      </div>
+      <div id="map-pins-layer" style="position:absolute;inset:0;pointer-events:none;"></div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="panel-leaderboard" class="tab-panel">
+    <div class="section-toolbar">
+      <h2 class="comp-section-header" style="margin:0;border:none;padding:0;">LEADERBOARD</h2>
+      <div id="lb-member-tools" style="display:none;gap:.5rem;flex-wrap:wrap;" class="section-toolbar">
+        <button class="cbtn cbtn-red" onclick="openAddTeamModal()"><i class="fas fa-plus"></i> Add Team</button>
+      </div>
+    </div>
+    <div id="leaderboard-wrapper">
+      <div class="lb-header-row">
+        <div style="text-align:center;">#</div>
+        <div>TEAM</div>
+        <div style="text-align:center;">HIGH SCORE</div>
+        <div class="lb-wins-hd"   style="text-align:center;">W</div>
+        <div class="lb-losses-hd" style="text-align:center;">L</div>
+        <div class="lb-rp-hd"     style="text-align:center;">RP</div>
+      </div>
+      <div class="lb-scroll-window" id="lb-scroll-window">
+        <div class="lb-track" id="lb-track"></div>
+      </div>
+      <div class="lb-actions-bar">
+        <button class="cbtn cbtn-ghost" onclick="toggleLbScroll()" id="scroll-toggle-btn"><i class="fas fa-play"></i> Start Scroll</button>
+        <button class="cbtn cbtn-blue"  onclick="openFullscreen()"><i class="fas fa-expand"></i> Fullscreen</button>
+        <label class="form-label" style="margin:0;display:flex;align-items:center;gap:.5rem;color:var(--text-muted);font-size:.75rem;">
+          Speed: <input type="range" id="scroll-speed" min="1" max="10" value="4" style="width:80px;" oninput="updateScrollSpeed()">
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- PACKING -->
+  <div id="panel-packing" class="tab-panel">
+    <div id="packing-member-view">
+      <div class="section-toolbar">
+        <h2 class="comp-section-header" style="margin:0;border:none;padding:0;">PACKING LIST</h2>
+        <button class="cbtn cbtn-red" onclick="openAddPackModal()"><i class="fas fa-plus"></i> Add Item</button>
+      </div>
+      <div class="pack-progress">
+        <div class="pack-progress-bar" id="pack-progress-bar" style="width:0%"></div>
+      </div>
+      <div id="pack-progress-label" style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;text-align:right;"></div>
+      <div id="packing-list"></div>
+    </div>
+    <div id="packing-guest-view" class="member-only-panel-notice" style="display:none;">
+      <i class="fas fa-lock"></i><h3>MEMBERS ONLY</h3>
+      <p>The packing list is only accessible to event members.</p>
+    </div>
+  </div>
+
+  <!-- MEMBERS -->
+  <div id="panel-members" class="tab-panel">
+    <div class="section-toolbar" style="flex-wrap:wrap;gap:.75rem;">
+      <h2 class="comp-section-header" style="margin:0;border:none;padding:0;">MEMBERS &amp; SETTINGS</h2>
+      <div id="invite-section" style="display:none;gap:.5rem;flex-wrap:wrap;" class="section-toolbar">
+        <input type="email" id="invite-email-input" class="cinput" style="width:220px;" placeholder="Email address to invite…">
+        <button class="cbtn cbtn-red" onclick="inviteMember()"><i class="fas fa-paper-plane"></i> Send Invite</button>
+        <button class="cbtn cbtn-ghost cbtn-sm" onclick="copyInviteLink()" title="Copy invite link"><i class="fas fa-link"></i> Copy Link</button>
+      </div>
+    </div>
+
+    <!-- Event info (visible to all members) -->
+    <div class="event-info-box" id="event-info-box">
+      <div class="event-info-grid">
+        <div class="event-info-field"><span class="eif-label">COMPETITION</span><span class="eif-val" id="eif-name"></span></div>
+        <div class="event-info-field"><span class="eif-label">HOSTING TEAM</span><span class="eif-val" id="eif-team"></span></div>
+        <div class="event-info-field"><span class="eif-label">DATE</span><span class="eif-val" id="eif-date"></span></div>
+        <div class="event-info-field"><span class="eif-label">LOCATION</span><span class="eif-val" id="eif-location"></span></div>
+      </div>
+      <div id="invite-code-display" style="margin-top:1rem;font-size:.75rem;color:var(--text-muted);">
+        INVITE CODE: <span id="eif-code" style="font-family:'Orbitron',sans-serif;color:#fff;letter-spacing:2px;"></span>
+        <button class="cbtn cbtn-ghost cbtn-sm" style="margin-left:.5rem;" onclick="copyInviteLink()"><i class="fas fa-copy"></i></button>
+      </div>
+    </div>
+
+    <!-- Danger zone (owner only) -->
+    <div id="close-event-section" style="display:none;margin-top:1.5rem;">
+      <h3 class="comp-section-header" style="margin-bottom:.75rem;color:var(--red);"><i class="fas fa-triangle-exclamation"></i> DANGER ZONE</h3>
+      <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:.75rem;">Closing the event permanently deletes all data and cannot be undone.</p>
+      <button class="cbtn cbtn-danger" onclick="closeEvent()"><i class="fas fa-lock"></i> Close &amp; Delete Event</button>
+    </div>
+
+    <!-- Edit event details (owner only) -->
+    <div id="edit-event-section" style="display:none;margin-top:1.5rem;">
+      <h3 class="comp-section-header" style="margin-bottom:1rem;">EDIT EVENT DETAILS</h3>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Competition Name</label>
+          <input type="text" class="cinput" id="edit-ev-name">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Hosting Team</label>
+          <input type="text" class="cinput" id="edit-ev-team">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Date</label>
+          <input type="text" class="cinput" id="edit-ev-date">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Location</label>
+          <input type="text" class="cinput" id="edit-ev-location">
+        </div>
+      </div>
+      <div class="form-field" style="margin-bottom:1rem;">
+        <label class="form-label">Description</label>
+        <textarea class="cinput" id="edit-ev-desc" rows="2" style="resize:vertical;"></textarea>
+      </div>
+      <button class="cbtn cbtn-red" onclick="saveEventDetails()"><i class="fas fa-save"></i> Save Changes</button>
+    </div>
+
+    <!-- Members list -->
+    <div style="margin-top:1.5rem;">
+      <h3 class="comp-section-header" style="margin-bottom:.75rem;">CURRENT MEMBERS</h3>
+      <div id="members-list" class="members-list"></div>
+    </div>
+  </div>
+
+</div><!-- /comp-body -->
+
+
+<!-- FULLSCREEN LEADERBOARD -->
+<div id="fullscreen-overlay">
+  <div class="fs-title">
+    <h1><i class="fas fa-trophy" style="margin-right:.5rem;"></i> LEADERBOARD</h1>
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <div id="fs-event-name" style="font-family:'Orbitron',sans-serif;font-size:.85rem;color:var(--text-muted);"></div>
+      <div id="fs-clock" style="font-family:'Orbitron',sans-serif;font-size:1.2rem;color:var(--yellow);"></div>
+      <button class="cbtn cbtn-ghost" onclick="closeFullscreen()"><i class="fas fa-compress"></i> Exit</button>
+    </div>
+  </div>
+  <div id="fs-lb-header" class="lb-header-row">
+    <div style="text-align:center;">#</div><div>TEAM</div>
+    <div style="text-align:center;">HIGH SCORE</div>
+    <div class="lb-wins-hd" style="text-align:center;">W</div>
+    <div class="lb-losses-hd" style="text-align:center;">L</div>
+    <div class="lb-rp-hd" style="text-align:center;">RP</div>
+  </div>
+  <div id="fs-lb-content">
+    <div class="lb-track" id="fs-lb-track"></div>
+  </div>
+  <div style="background:#0d0d0d;border-top:1px solid var(--border);padding:.5rem 2%;text-align:center;font-size:.7rem;color:#444;font-family:'Orbitron',sans-serif;letter-spacing:2px;">
+    HOSTED BY <span id="fs-hosting-team"></span> — METAL MANIACS COMPETITION HOST
+  </div>
+</div>
+
+
+<!-- ═══════ MODALS ═══════ -->
+
+<!-- Schedule Modal -->
+<div class="modal-overlay hidden" id="sched-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('sched-modal')"><i class="fas fa-times"></i></button>
+    <h2 class="modal-title"><i class="fas fa-calendar-plus" style="margin-right:.5rem;"></i><span id="sched-modal-title">ADD EVENT</span></h2>
+    <input type="hidden" id="sched-edit-id">
+    <div class="form-row">
+      <div class="form-field"><label class="form-label">Time</label><input type="time" class="cinput" id="sched-time"></div>
+      <div class="form-field" style="flex:2;"><label class="form-label">Event Name</label><input type="text" class="cinput" id="sched-name" placeholder="e.g. Opening Ceremony"></div>
+    </div>
+    <div class="form-field" style="margin-bottom:1rem;"><label class="form-label">Notes</label><input type="text" class="cinput" id="sched-notes" placeholder="Optional details…"></div>
+    <div style="display:flex;gap:.75rem;">
+      <button class="cbtn cbtn-red" style="flex:1;justify-content:center;" onclick="saveScheduleEvent()"><i class="fas fa-save"></i> Save</button>
+      <button class="cbtn cbtn-ghost" onclick="closeModal('sched-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Queue Modal -->
+<div class="modal-overlay hidden" id="queue-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('queue-modal')"><i class="fas fa-times"></i></button>
+    <h2 class="modal-title"><i class="fas fa-list-ol" style="margin-right:.5rem;"></i><span id="queue-modal-title">ADD TEAM TO QUEUE</span></h2>
+    <input type="hidden" id="queue-edit-id">
+    <div class="form-row">
+      <div class="form-field"><label class="form-label">Team #</label><input type="text" class="cinput" id="q-number" placeholder="12345"></div>
+      <div class="form-field" style="flex:2;"><label class="form-label">Team Name</label><input type="text" class="cinput" id="q-name" placeholder="e.g. The Bolts"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label class="form-label">Field #</label><input type="number" class="cinput" id="q-field" placeholder="1" min="1"></div>
+      <div class="form-field"><label class="form-label">Queue #</label><input type="number" class="cinput" id="q-queue-num" placeholder="1" min="1"></div>
+      <div class="form-field"><label class="form-label">Expected Time</label><input type="time" class="cinput" id="q-time"></div>
+    </div>
+    <div style="display:flex;gap:.75rem;">
+      <button class="cbtn cbtn-red" style="flex:1;justify-content:center;" onclick="saveQueueTeam()"><i class="fas fa-save"></i> Save</button>
+      <button class="cbtn cbtn-ghost" onclick="closeModal('queue-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Volunteer Modal -->
+<div class="modal-overlay hidden" id="vol-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('vol-modal')"><i class="fas fa-times"></i></button>
+    <h2 class="modal-title"><i class="fas fa-user-plus" style="margin-right:.5rem;"></i> ADD / EDIT VOLUNTEER</h2>
+    <input type="hidden" id="vol-edit-id">
+    <div class="form-field" style="margin-bottom:.75rem;"><label class="form-label">Name</label><input type="text" class="cinput" id="vol-name-input" placeholder="Volunteer name"></div>
+    <div class="form-field" style="margin-bottom:1rem;"><label class="form-label">Role / Station</label><input type="text" class="cinput" id="vol-role-input" placeholder="e.g. Head Referee, Timer…"></div>
+    <div style="display:flex;gap:.75rem;">
+      <button class="cbtn cbtn-red" style="flex:1;justify-content:center;" onclick="saveVolunteer()"><i class="fas fa-save"></i> Save</button>
+      <button class="cbtn cbtn-ghost" onclick="closeModal('vol-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pin Modal -->
+<div class="modal-overlay hidden" id="pin-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('pin-modal')"><i class="fas fa-times"></i></button>
+    <h2 class="modal-title"><i class="fas fa-map-pin" style="margin-right:.5rem;"></i> NAME THIS PIN</h2>
+    <div class="form-field" style="margin-bottom:1rem;"><label class="form-label">Label</label><input type="text" class="cinput" id="pin-label-input" placeholder="e.g. Registration, Field 1, Pit Area…"></div>
+    <div style="display:flex;gap:.75rem;">
+      <button class="cbtn cbtn-red" style="flex:1;justify-content:center;" onclick="confirmPin()"><i class="fas fa-check"></i> Place Pin</button>
+      <button class="cbtn cbtn-ghost" onclick="cancelPin()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Leaderboard Team Modal -->
+<div class="modal-overlay hidden" id="lb-team-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('lb-team-modal')"><i class="fas fa-times"></i></button>
+    <h2 class="modal-title"><i class="fas fa-trophy" style="margin-right:.5rem;"></i><span id="lb-team-modal-title">ADD TEAM</span></h2>
+    <input type="hidden" id="lb-edit-id">
+    <div class="form-row">
+      <div class="form-field"><label class="form-label">Team #</label><input type="text" class="cinput" id="lb-num" placeholder="12345"></div>
+      <div class="form-field" style="flex:2;"><label class="form-label">Team Name</label><input type="text" class="cinput" id="lb-name" placeholder="Team Name"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label class="form-label">High Score</label><input type="number" class="cinput" id="lb-score" placeholder="0" min="0"></div>
+      <div class="form-field"><label class="form-label">Wins</label><input type="number" class="cinput" id="lb-wins" placeholder="0" min="0"></div>
+      <div class="form-field"><label class="form-label">Losses</label><input type="number" class="cinput" id="lb-losses" placeholder="0" min="0"></div>
+      <div class="form-field"><label class="form-label">RP</label><input type="number" class="cinput" id="lb-rp" placeholder="0" min="0"></div>
+    </div>
+    <div style="display:flex;gap:.75rem;">
+      <button class="cbtn cbtn-red" style="flex:1;justify-content:center;" onclick="saveLbTeam()"><i class="fas fa-save"></i> Save</button>
+      <button class="cbtn cbtn-ghost" onclick="closeModal('lb-team-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Packing Item Modal -->
+<div class="modal-overlay hidden" id="pack-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('pack-modal')"><i class="fas fa-times"></i></button>
+    <h2 class="modal-title"><i class="fas fa-box-open" style="margin-right:.5rem;"></i> ADD PACKING ITEM</h2>
+    <div class="form-field" style="margin-bottom:.75rem;"><label class="form-label">Category</label><input type="text" class="cinput" id="pack-cat-input" list="pack-cat-list" placeholder="Electronics, Field Elements, Supplies…"><datalist id="pack-cat-list"></datalist></div>
+    <div class="form-field" style="margin-bottom:1rem;"><label class="form-label">Item Name</label><input type="text" class="cinput" id="pack-item-input" placeholder="e.g. Extension cord (25ft)"></div>
+    <div style="display:flex;gap:.75rem;">
+      <button class="cbtn cbtn-red" style="flex:1;justify-content:center;" onclick="savePackItem()"><i class="fas fa-save"></i> Add</button>
+      <button class="cbtn cbtn-ghost" onclick="closeModal('pack-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Banner Modal -->
+<div class="modal-overlay hidden" id="banner-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('banner-modal')"><i class="fas fa-times"></i></button>
+    <h2 class="modal-title"><i class="fas fa-bullhorn" style="margin-right:.5rem;"></i> ANNOUNCEMENTS</h2>
+    <div class="form-field" style="margin-bottom:1rem;"><label class="form-label">New Announcement</label><input type="text" class="cinput" id="banner-text-input" placeholder="Type announcement text…"></div>
+    <button class="cbtn cbtn-red" style="margin-bottom:1rem;" onclick="addBanner()"><i class="fas fa-plus"></i> Add</button>
+    <div class="divider"></div>
+    <div class="form-label" style="margin-bottom:.5rem;">Active Announcements</div>
+    <div id="banner-list-modal" style="display:flex;flex-direction:column;gap:.4rem;max-height:200px;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<script src="/tools/competition/auth.js"></script>
+<script src="/tools/competition/event/event.js"></script>
+</body>
+</html>

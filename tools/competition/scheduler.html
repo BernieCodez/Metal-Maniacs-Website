@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Scheduler — FTC Tools</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/tools/competition/competition.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    .tool-section { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
+    .tool-section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: .75rem;
+      letter-spacing: 2.5px;
+      color: var(--red);
+      margin-bottom: 1.5rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .team-select-bar { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: 2rem; }
+
+    /* ── Calendar ── */
+    .cal-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: .5rem;
+    }
+    .cal-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      color: #eee;
+    }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .cal-day-header {
+      text-align: center;
+      font-size: .65rem;
+      font-family: 'Orbitron', sans-serif;
+      color: var(--text-muted);
+      padding: .4rem 0;
+      letter-spacing: 1px;
+    }
+    .cal-cell {
+      aspect-ratio: 1;
+      background: #1a1a1a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: .3rem;
+      cursor: pointer;
+      user-select: none;
+      transition: border-color .15s, background .15s;
+      position: relative;
+      min-height: 52px;
+    }
+    .cal-cell.empty { background: transparent; border-color: transparent; cursor: default; pointer-events: none; }
+    .cal-cell.past { opacity: .4; pointer-events: none; }
+    .cal-cell:hover:not(.empty) { border-color: var(--red); }
+    .cal-cell.mine-selected { background: rgba(255,0,0,.12); border-color: var(--red); }
+    .cal-cell .cal-num {
+      font-size: .8rem;
+      font-weight: 600;
+      color: #ccc;
+      line-height: 1;
+    }
+    .cal-cell.mine-selected .cal-num { color: var(--red); }
+    .cal-cell .cal-dots {
+      display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; margin-top: 2px;
+    }
+    .cal-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--blue);
+      flex-shrink: 0;
+    }
+    .cal-dot.mine { background: var(--red); }
+
+    /* ── Summary ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: .75rem;
+      margin-top: 1.5rem;
+    }
+    .summary-date-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .9rem 1rem;
+      transition: border-color .2s;
+    }
+    .summary-date-card.full-team { border-color: var(--green); }
+    .summary-date-card.majority  { border-color: var(--yellow); }
+    .summary-date-card .sdc-date {
+      font-family: 'Orbitron', sans-serif;
+      font-size: .78rem;
+      color: #eee;
+      margin-bottom: .5rem;
+    }
+    .summary-date-card .sdc-count {
+      font-size: .8rem;
+      color: var(--text-muted);
+      margin-bottom: .4rem;
+    }
+    .member-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+      background: rgba(59,130,246,.15);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: 99px;
+      padding: .15rem .5rem;
+      font-size: .68rem;
+      color: var(--blue);
+      margin: .15rem;
+    }
+    .member-chip.is-me { background: rgba(255,0,0,.12); border-color: rgba(255,0,0,.3); color: var(--red); }
+
+    /* ── Legend ── */
+    .legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .72rem; color: #aaa; margin-top: .5rem; }
+    .legend-item { display: flex; align-items: center; gap: .3rem; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  </style>
+</head>
+<body>
+
+<header class="comp-header">
+  <a href="/" class="comp-header-logo">METAL <span>MANIACS</span></a>
+  <div class="comp-header-title"><i class="fas fa-calendar-alt"></i> FTC TOOLS</div>
+  <div class="comp-header-right">
+    <a href="/tools/competition/dashboard" class="cbtn cbtn-ghost cbtn-sm"><i class="fas fa-table-columns"></i> Dashboard</a>
+    <div id="user-pill" class="comp-auth-pill member" style="cursor:default;">
+      <div class="dot"></div>
+      <span id="user-pill-label">…</span>
+    </div>
+  </div>
+</header>
+
+<div class="tool-section">
+  <div class="tool-section-title"><i class="fas fa-calendar-check"></i> TEAM AVAILABILITY SCHEDULER</div>
+
+  <div class="team-select-bar">
+    <div class="form-field" style="flex:1;min-width:200px;">
+      <label class="form-label">Your Team</label>
+      <select id="team-select" class="cselect" onchange="onTeamChange()">
+        <option value="">— select a team —</option>
+      </select>
+    </div>
+    <button class="cbtn cbtn-ghost" onclick="showNewTeamModal()"><i class="fas fa-plus"></i> New Team</button>
+    <button class="cbtn cbtn-ghost" onclick="showJoinTeamModal()"><i class="fas fa-link"></i> Join Team</button>
+  </div>
+
+  <div id="sched-section" style="display:none;">
+
+    <!-- Invite code share -->
+    <div class="comp-card" id="invite-banner" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem;">
+      <div>
+        <div style="font-size:.72rem;color:#aaa;margin-bottom:.2rem;">TEAM INVITE CODE</div>
+        <span id="team-invite-code" style="font-family:'Orbitron',sans-serif;font-size:1.2rem;color:var(--yellow);letter-spacing:4px;"></span>
+      </div>
+      <button class="cbtn cbtn-ghost cbtn-sm" onclick="copyCode()"><i class="fas fa-copy"></i> Copy</button>
+    </div>
+
+    <!-- Calendar -->
+    <div class="comp-card">
+      <div class="cal-header">
+        <button class="cbtn cbtn-ghost cbtn-sm" onclick="prevMonth()"><i class="fas fa-chevron-left"></i></button>
+        <div class="cal-title" id="cal-title">Month YYYY</div>
+        <button class="cbtn cbtn-ghost cbtn-sm" onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
+      </div>
+
+      <!-- Day headers -->
+      <div class="cal-grid" id="cal-grid">
+        <!-- injected by JS -->
+      </div>
+
+      <div class="legend" style="margin-top:.75rem;">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red);"></div> My availability</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue);"></div> Team member</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green);"></div> Everyone available</div>
+      </div>
+    </div>
+
+    <!-- Note -->
+    <div class="comp-card" style="margin-top:1rem;">
+      <label class="form-label" style="margin-bottom:.4rem;">Note (optional — applies to all your selected dates)</label>
+      <input type="text" id="note-input" class="cinput" placeholder="e.g. available after 4pm">
+    </div>
+
+    <!-- Submit -->
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem;align-items:center;">
+      <button class="cbtn cbtn-red" onclick="submitAvailability()"><i class="fas fa-save"></i> Save My Availability</button>
+      <button class="cbtn cbtn-ghost" onclick="clearMyAvailability()"><i class="fas fa-trash"></i> Clear My Choices</button>
+      <span id="save-status" style="font-size:.78rem;color:var(--green);display:none;"><i class="fas fa-check"></i> Saved!</span>
+    </div>
+
+    <!-- Team summary -->
+    <div style="margin-top:2rem;">
+      <div class="comp-card-title" style="font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:2px;color:var(--red);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;">
+        <i class="fas fa-users"></i> TEAM OVERVIEW
+        <button class="cbtn cbtn-ghost cbtn-sm" style="margin-left:auto;" onclick="loadSchedule()"><i class="fas fa-sync"></i> Refresh</button>
+      </div>
+      <p style="font-size:.8rem;color:#aaa;" id="summary-hint">Select dates where everyone (or most people) can attend, then share the schedule with your team.</p>
+      <div id="summary-grid" class="summary-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- New Team Modal -->
+<div class="modal-overlay hidden" id="new-team-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('new-team-modal')"><i class="fas fa-times"></i></button>
+    <div class="modal-title"><i class="fas fa-users"></i> CREATE TEAM</div>
+    <div class="form-field" style="margin-bottom:1rem;">
+      <label class="form-label">Team Name</label>
+      <input type="text" id="new-team-name" class="cinput" placeholder="e.g. Metal Maniacs 10355">
+    </div>
+    <button class="cbtn cbtn-red" style="width:100%;" onclick="createTeam()">Create Team</button>
+    <div id="new-team-err" class="form-label" style="color:#f87171;margin-top:.5rem;display:none;"></div>
+  </div>
+</div>
+
+<!-- Join Team Modal -->
+<div class="modal-overlay hidden" id="join-team-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('join-team-modal')"><i class="fas fa-times"></i></button>
+    <div class="modal-title"><i class="fas fa-link"></i> JOIN TEAM</div>
+    <div class="form-field" style="margin-bottom:1rem;">
+      <label class="form-label">Invite Code</label>
+      <input type="text" id="join-team-code" class="cinput" placeholder="6-character code">
+    </div>
+    <button class="cbtn cbtn-red" style="width:100%;" onclick="joinTeam()">Join Team</button>
+    <div id="join-team-err" class="form-label" style="color:#f87171;margin-top:.5rem;display:none;"></div>
+  </div>
+</div>
+
+<script src="/tools/competition/auth.js"></script>
+<script>
+  let currentUser = null;
+  let currentTeam = null;
+  let allSlots    = [];   // all team availability from API
+  let mySelected  = new Set(); // date strings user has toggled
+
+  let calYear  = new Date().getFullYear();
+  let calMonth = new Date().getMonth(); // 0-indexed
+
+  const DAY_NAMES = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  /* ── Init ── */
+  window.addEventListener('DOMContentLoaded', async () => {
+    currentUser = requireAuth();
+    if (!currentUser) return;
+    document.getElementById('user-pill-label').textContent = currentUser.name;
+    await loadTeams();
+  });
+
+  /* ── Teams ── */
+  async function loadTeams() {
+    const res = await apiFetch('/api/teams');
+    if (!res) return;
+    const teams = await res.json();
+    const sel = document.getElementById('team-select');
+    sel.innerHTML = '<option value="">— select a team —</option>';
+    teams.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = t.name + (t.my_role === 'owner' ? ' (owner)' : '');
+      sel.appendChild(opt);
+    });
+    const saved = localStorage.getItem('mm_default_team');
+    let savedId = null;
+    try { savedId = JSON.parse(saved)?.id; } catch {}
+    const match = teams.find(t => t.id === savedId);
+    if (match) { sel.value = match.id; await onTeamChange(); }
+  }
+
+  async function onTeamChange() {
+    const id = document.getElementById('team-select').value;
+    if (!id) { document.getElementById('sched-section').style.display = 'none'; currentTeam = null; return; }
+    localStorage.setItem('mm_default_team', JSON.stringify({ id, name: currentTeam?.name || id }));
+    const res = await apiFetch(`/api/teams/${id}`);
+    if (!res) return;
+    currentTeam = await res.json();
+    document.getElementById('sched-section').style.display = 'block';
+    document.getElementById('team-invite-code').textContent = currentTeam.invite_code;
+    await loadSchedule();
+  }
+
+  async function loadSchedule() {
+    if (!currentTeam) return;
+    const res = await apiFetch(`/api/teams/${currentTeam.id}/schedule`);
+    if (!res) return;
+    allSlots = await res.json();
+
+    // Restore my selections from API
+    mySelected = new Set(allSlots.filter(s => s.user_id === currentUser.sub).map(s => s.date));
+    if (mySelected.size) {
+      // Pre-fill note from first slot
+      const mine = allSlots.find(s => s.user_id === currentUser.sub);
+      if (mine?.note) document.getElementById('note-input').value = mine.note;
+    }
+
+    renderCalendar();
+    renderSummary();
+  }
+
+  /* ── Calendar ── */
+  function prevMonth() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); }
+  function nextMonth() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); }
+
+  function renderCalendar() {
+    document.getElementById('cal-title').textContent = `${MONTH_NAMES[calMonth]} ${calYear}`;
+
+    const today   = new Date(); today.setHours(0,0,0,0);
+    const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+    // Build dot map: date string → [{ userId, mine }]
+    const dotMap = {};
+    allSlots.forEach(s => {
+      if (!dotMap[s.date]) dotMap[s.date] = [];
+      dotMap[s.date].push({ userId: s.user_id, name: s.name });
+    });
+
+    let html = DAY_NAMES.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) html += `<div class="cal-cell empty"></div>`;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${calYear}-${String(calMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const cellDate = new Date(calYear, calMonth, d);
+      const isPast   = cellDate < today;
+      const isMine   = mySelected.has(dateStr);
+      const dots     = dotMap[dateStr] || [];
+      const dotsHtml = dots.map(u => `<div class="cal-dot${u.userId === currentUser.sub ? ' mine' : ''}" title="${escHtml(u.name)}"></div>`).join('');
+
+      let cls = 'cal-cell';
+      if (isPast) cls += ' past';
+      if (isMine) cls += ' mine-selected';
+
+      html += `<div class="${cls}" data-date="${dateStr}" onclick="toggleDate('${dateStr}')">
+        <div class="cal-num">${d}</div>
+        <div class="cal-dots">${dotsHtml}</div>
+      </div>`;
+    }
+
+    document.getElementById('cal-grid').innerHTML = html;
+  }
+
+  function toggleDate(dateStr) {
+    if (mySelected.has(dateStr)) mySelected.delete(dateStr);
+    else mySelected.add(dateStr);
+    renderCalendar();
+  }
+
+  /* ── Summary ── */
+  function renderSummary() {
+    // Group all slots by date
+    const byDate = {};
+    allSlots.forEach(s => {
+      if (!byDate[s.date]) byDate[s.date] = [];
+      byDate[s.date].push(s);
+    });
+
+    const sorted = Object.entries(byDate).sort(([a], [b]) => a.localeCompare(b));
+    const memberCount = (currentTeam?.members?.length || 0) + 1; // +1 for owner
+
+    const grid = document.getElementById('summary-grid');
+    if (!sorted.length) {
+      grid.innerHTML = '<p style="color:#aaa;font-size:.82rem;">No availability submitted yet. Be the first!</p>';
+      document.getElementById('summary-hint').style.display = 'block';
+      return;
+    }
+    document.getElementById('summary-hint').style.display = 'none';
+
+    grid.innerHTML = sorted.map(([date, slots]) => {
+      const count = slots.length;
+      const isFull = memberCount > 1 && count >= memberCount;
+      const isMaj  = !isFull && memberCount > 1 && count >= Math.ceil(memberCount / 2);
+      let cardCls = 'summary-date-card';
+      if (isFull) cardCls += ' full-team';
+      else if (isMaj) cardCls += ' majority';
+
+      const [y, m, d] = date.split('-');
+      const displayDate = new Date(+y, +m - 1, +d).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+
+      const chips = slots.map(s =>
+        `<span class="member-chip${s.user_id === currentUser.sub ? ' is-me' : ''}">${escHtml(s.name)}${s.note ? ` · ${escHtml(s.note)}` : ''}</span>`
+      ).join('');
+
+      return `<div class="${cardCls}">
+        <div class="sdc-date">${escHtml(displayDate)}</div>
+        <div class="sdc-count">${count} / ${memberCount} available${isFull ? ' ✓ ALL' : isMaj ? ' ✓ MAJORITY' : ''}</div>
+        <div>${chips}</div>
+      </div>`;
+    }).join('');
+  }
+
+  /* ── Submit ── */
+  async function submitAvailability() {
+    if (!currentTeam) return;
+    const dates   = Array.from(mySelected).sort();
+    const note    = document.getElementById('note-input').value.trim();
+    const res = await apiFetch(`/api/teams/${currentTeam.id}/schedule`, {
+      method: 'POST',
+      body: JSON.stringify({ dates, note })
+    });
+    if (!res) return;
+    const data = await res.json();
+    if (!res.ok) { alert(data.error || 'Save failed.'); return; }
+    const status = document.getElementById('save-status');
+    status.style.display = 'inline';
+    setTimeout(() => { status.style.display = 'none'; }, 2500);
+    await loadSchedule();
+  }
+
+  async function clearMyAvailability() {
+    if (!confirm('Clear all your submitted dates?')) return;
+    mySelected.clear();
+    if (currentTeam) {
+      await apiFetch(`/api/teams/${currentTeam.id}/schedule/me`, { method: 'DELETE' });
+    }
+    await loadSchedule();
+  }
+
+  /* ── Team Modals ── */
+  function showNewTeamModal() { document.getElementById('new-team-modal').classList.remove('hidden'); }
+  function showJoinTeamModal() { document.getElementById('join-team-modal').classList.remove('hidden'); }
+  function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+  async function createTeam() {
+    const name  = document.getElementById('new-team-name').value.trim();
+    const errEl = document.getElementById('new-team-err');
+    if (!name) { errEl.textContent = 'Team name required.'; errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    const res = await apiFetch('/api/teams', { method: 'POST', body: JSON.stringify({ name }) });
+    if (!res) return;
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+    closeModal('new-team-modal');
+    document.getElementById('new-team-name').value = '';
+    await loadTeams();
+    document.getElementById('team-select').value = data.id;
+    await onTeamChange();
+  }
+
+  async function joinTeam() {
+    const code  = document.getElementById('join-team-code').value.trim();
+    const errEl = document.getElementById('join-team-err');
+    if (!code) { errEl.textContent = 'Code required.'; errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    const res = await apiFetch('/api/teams/join', { method: 'POST', body: JSON.stringify({ code }) });
+    if (!res) return;
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+    closeModal('join-team-modal');
+    document.getElementById('join-team-code').value = '';
+    await loadTeams();
+    document.getElementById('team-select').value = data.team_id;
+    await onTeamChange();
+  }
+
+  function copyCode() {
+    const code = document.getElementById('team-invite-code').textContent;
+    navigator.clipboard.writeText(code).then(() => alert('Code copied!'));
+  }
+</script>
+</body>
+</html>

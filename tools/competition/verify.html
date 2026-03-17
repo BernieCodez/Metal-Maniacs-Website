@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signing In… — Competition Host</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/tools/competition/competition.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+<header class="comp-header">
+  <a href="/" class="comp-header-logo">METAL <span>MANIACS</span></a>
+  <div class="comp-header-title"><i class="fas fa-trophy"></i> COMPETITION HOST</div>
+  <div class="comp-header-right">
+    <a href="/tools/competition/dashboard" class="cbtn cbtn-ghost cbtn-sm"><i class="fas fa-table-columns"></i> Dashboard</a>
+  </div>
+</header>
+
+<div class="auth-page-wrap">
+  <div class="auth-card" id="verify-card">
+    <!-- Loading state -->
+    <div id="state-loading">
+      <div class="auth-success-icon" style="color:var(--text-muted);">
+        <i class="fas fa-spinner fa-spin"></i>
+      </div>
+      <h2 style="font-family:'Orbitron',sans-serif;font-size:1rem;letter-spacing:2px;color:#fff;margin:.5rem 0;">SIGNING YOU IN…</h2>
+      <p class="auth-card-sub">Verifying your magic link, please wait.</p>
+    </div>
+
+    <!-- Success state -->
+    <div id="state-success" style="display:none;">
+      <div class="auth-success-icon" style="color:var(--green);">
+        <i class="fas fa-circle-check"></i>
+      </div>
+      <h2 style="font-family:'Orbitron',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--green);margin:.5rem 0;">SIGNED IN!</h2>
+      <p class="auth-card-sub" id="success-msg">Welcome back! Redirecting…</p>
+    </div>
+
+    <!-- Error state -->
+    <div id="state-error" style="display:none;">
+      <div class="auth-success-icon" style="color:var(--red);">
+        <i class="fas fa-circle-xmark"></i>
+      </div>
+      <h2 style="font-family:'Orbitron',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--red);margin:.5rem 0;">LINK INVALID</h2>
+      <p class="auth-card-sub" id="error-msg">This link has expired or already been used.</p>
+      <a href="/tools/competition/login" class="cbtn cbtn-red" style="margin-top:1rem;display:flex;align-items:center;justify-content:center;gap:.5rem;text-decoration:none;">
+        <i class="fas fa-arrow-left"></i> Back to Sign In
+      </a>
+    </div>
+  </div>
+</div>
+
+<script src="/tools/competition/auth.js"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', async () => {
+    // If already have a valid JWT, skip verification
+    if (getCurrentUser()) {
+      const params = new URLSearchParams(window.location.search);
+      window.location.replace(params.get('redirect') || '/tools/competition/dashboard');
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const token  = params.get('token');
+    const redirect = params.get('redirect') || '/tools/competition/dashboard';
+
+    if (!token) {
+      showState('error', 'No token found in the link. Please request a new sign-in email.');
+      return;
+    }
+
+    try {
+      const res  = await fetch('/api/auth/verify?token=' + encodeURIComponent(token));
+      const data = await res.json();
+
+      if (!res.ok) {
+        showState('error', data.error || 'Verification failed.');
+        return;
+      }
+
+      setJWT(data.token);
+      showState('success', `Welcome, ${data.user.name}! Taking you to your dashboard…`);
+      setTimeout(() => window.location.replace(redirect), 1200);
+
+    } catch (e) {
+      showState('error', 'Network error — please try again.');
+    }
+  });
+
+  function showState(state, msg) {
+    document.getElementById('state-loading').style.display = 'none';
+    document.getElementById('state-success').style.display = state === 'success' ? 'block' : 'none';
+    document.getElementById('state-error').style.display   = state === 'error'   ? 'block' : 'none';
+    if (state === 'success') document.getElementById('success-msg').textContent = msg;
+    if (state === 'error')   document.getElementById('error-msg').textContent   = msg;
+  }
+</script>
+</body>
+</html>

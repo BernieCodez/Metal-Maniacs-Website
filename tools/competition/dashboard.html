@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — FTC Tools</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/tools/competition/competition.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+<header class="comp-header">
+  <a href="/" class="comp-header-logo">METAL <span>MANIACS</span></a>
+  <div class="comp-header-title"><i class="fas fa-tools"></i> FTC TOOLS</div>
+  <div class="comp-header-right">
+    <a href="/tools/competition/dashboard" class="cbtn cbtn-ghost cbtn-sm"><i class="fas fa-table-columns"></i> Dashboard</a>
+    <div id="user-pill" class="comp-auth-pill member" style="cursor:default;">
+      <div class="dot"></div>
+      <span id="user-pill-label">…</span>
+    </div>
+  </div>
+</header>
+
+<div class="dash-layout">
+
+  <!-- ══ LEFT SIDEBAR: My Teams ══ -->
+  <aside class="dash-sidebar is-left">
+    <div class="dash-panel">
+      <div class="dash-panel-header">
+        <span><i class="fas fa-users"></i> MY TEAMS</span>
+        <div style="display:flex;gap:.3rem;">
+          <button class="cbtn cbtn-ghost cbtn-sm" title="Create team" onclick="showTeamModal('create')"><i class="fas fa-plus"></i></button>
+          <button class="cbtn cbtn-ghost cbtn-sm" title="Join team"   onclick="showTeamModal('join')"><i class="fas fa-link"></i></button>
+        </div>
+      </div>
+      <div class="dash-panel-body" id="teams-list">
+        <div style="text-align:center;padding:1.5rem 1rem;color:var(--text-muted);font-size:.82rem;">
+          <i class="fas fa-spinner fa-spin" style="display:block;margin-bottom:.4rem;"></i>Loading…
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══ -->
+  <main class="dash-main">
+    <!-- Tool Suite Hero -->
+    <div class="dashboard-top">
+      <div>
+        <h1 class="dash-title">FTC TOOL SUITE</h1>
+        <p id="dash-subtitle" class="dash-subtitle"></p>
+      </div>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;">
+        <button class="cbtn cbtn-ghost" onclick="signOutDash()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+      </div>
+    </div>
+
+    <!-- Default team banner -->
+    <div id="default-team-bar" class="default-team-bar" style="display:none;">
+      <i class="fas fa-star"></i>
+      <span>Default team: <strong id="default-team-bar-name"></strong></span>
+      <span style="font-size:.72rem;color:var(--text-muted);margin-left:auto;">Used for new events &amp; tools</span>
+    </div>
+
+    <!-- Tool Cards -->
+    <div class="tool-suite-grid">
+
+      <!-- Competition Host -->
+      <div class="tool-card">
+        <div class="tool-card-icon" style="background:rgba(255,0,0,.08);border-color:rgba(255,0,0,.2);">
+          <i class="fas fa-trophy" style="color:var(--red);"></i>
+        </div>
+        <div class="tool-card-body">
+          <div class="tool-card-title">COMPETITION HOST</div>
+          <div class="tool-card-desc">Manage FTC events — schedule, queue, volunteers, packing list, leaderboard, and more.</div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem;">
+            <a href="/tools/competition/new"  class="cbtn cbtn-red cbtn-sm"><i class="fas fa-plus"></i> New Event</a>
+            <a href="/tools/competition/join" class="cbtn cbtn-ghost cbtn-sm"><i class="fas fa-link"></i> Join Event</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Manual Jeopardy -->
+      <div class="tool-card">
+        <div class="tool-card-icon" style="background:rgba(250,204,21,.08);border-color:rgba(250,204,21,.2);">
+          <i class="fas fa-question-circle" style="color:var(--yellow);"></i>
+        </div>
+        <div class="tool-card-body">
+          <div class="tool-card-title">GAME MANUAL JEOPARDY</div>
+          <div class="tool-card-desc">Upload this season's game manual PDF and play a Jeopardy-style quiz to master the rules as a team.</div>
+          <div style="margin-top:1rem;">
+            <a href="/tools/competition/jeopardy" class="cbtn cbtn-yellow cbtn-sm"><i class="fas fa-play"></i> Open Jeopardy</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Scheduler -->
+      <div class="tool-card">
+        <div class="tool-card-icon" style="background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.2);">
+          <i class="fas fa-calendar-check" style="color:var(--blue);"></i>
+        </div>
+        <div class="tool-card-body">
+          <div class="tool-card-title">TEAM SCHEDULER</div>
+          <div class="tool-card-desc">Members mark which days they're available. The owner gets an instant overview of when everyone can meet.</div>
+          <div style="margin-top:1rem;">
+            <a href="/tools/competition/scheduler" class="cbtn cbtn-blue cbtn-sm"><i class="fas fa-calendar-alt"></i> Open Scheduler</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Engineering Notebook -->
+      <div class="tool-card">
+        <div class="tool-card-icon" style="background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.2);">
+          <i class="fas fa-book-open" style="color:var(--green);"></i>
+        </div>
+        <div class="tool-card-body">
+          <div class="tool-card-title">ENGINEERING NOTEBOOK</div>
+          <div class="tool-card-desc">Log daily progress, goals, and achievements. Every member can add entries and read the team's full build history.</div>
+          <div style="margin-top:1rem;">
+            <a href="/tools/competition/notebook" class="cbtn cbtn-sm" style="background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3);"><i class="fas fa-pen-to-square"></i> Open Notebook</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Recent Events -->
+    <div style="margin-top:2.5rem;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:2px;color:var(--red);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;">
+        <i class="fas fa-trophy"></i> MY EVENTS
+        <a href="/tools/competition/new" class="cbtn cbtn-red cbtn-sm" style="margin-left:auto;"><i class="fas fa-plus"></i> New</a>
+        <a href="/tools/competition/join" class="cbtn cbtn-ghost cbtn-sm"><i class="fas fa-link"></i> Join</a>
+      </div>
+      <div id="events-loading" class="dash-loading"><i class="fas fa-spinner fa-spin"></i> Loading events…</div>
+      <div id="events-empty" class="dash-empty" style="display:none;">
+        <i class="fas fa-calendar-xmark"></i>
+        <h3>No events yet</h3>
+        <p>Create your first competition or accept an invitation to join one.</p>
+        <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;">
+          <a href="/tools/competition/new"  class="cbtn cbtn-red"><i class="fas fa-plus"></i> Create Event</a>
+          <a href="/tools/competition/join" class="cbtn cbtn-ghost"><i class="fas fa-link"></i> Join with Code</a>
+        </div>
+      </div>
+      <div id="events-grid" class="events-grid" style="display:none;"></div>
+    </div>
+  </main>
+
+  <!-- ══ RIGHT SIDEBAR: Active Team ══ -->
+  <aside class="dash-sidebar is-right">
+    <div class="dash-panel" id="team-detail-panel">
+      <!-- Empty state -->
+      <div id="team-detail-empty" class="team-detail-empty">
+        <i class="fas fa-users-slash"></i>
+        <div>Select a team to view details</div>
+        <button class="cbtn cbtn-red cbtn-sm" style="margin-top:.75rem;" onclick="showTeamModal('create')">
+          <i class="fas fa-plus"></i> Create Team
+        </button>
+      </div>
+      <!-- Loaded state -->
+      <div id="team-detail-content" style="display:none;">
+        <div class="team-detail-name" id="td-name"></div>
+        <div class="team-detail-meta">
+          <div class="tdm-row">
+            <i class="fas fa-key"></i>
+            <span>Code:&nbsp;<span class="team-invite-code" id="td-code" onclick="copyInviteCode()" title="Click to copy"></span>&nbsp;<i class="fas fa-copy" style="font-size:.65rem;cursor:pointer;color:#666;" onclick="copyInviteCode()" title="Copy"></i></span>
+          </div>
+          <div class="tdm-row">
+            <i class="fas fa-calendar"></i>
+            <span class="tdm-val" id="td-created"></span>
+          </div>
+          <div class="tdm-row">
+            <i class="fas fa-shield-halved"></i>
+            <span class="tdm-val" id="td-role"></span>
+          </div>
+        </div>
+        <div class="team-detail-members">
+          <div class="tdm-section-title">MEMBERS</div>
+          <div id="td-members"></div>
+        </div>
+        <!-- Owner: invite by email -->
+        <div id="td-invite-section" style="display:none;margin-top:.75rem;border-top:1px solid var(--border);padding-top:.75rem;">
+          <div class="tdm-section-title" style="margin-bottom:.4rem;">INVITE MEMBER</div>
+          <div style="display:flex;gap:.35rem;">
+            <input type="email" id="td-invite-email" class="cinput" style="flex:1;font-size:.8rem;padding:.45rem .6rem;" placeholder="Email address…">
+            <button class="cbtn cbtn-red cbtn-sm" onclick="inviteTeamByEmail()"><i class="fas fa-paper-plane"></i></button>
+          </div>
+          <div id="td-invite-err" style="color:#f87171;font-size:.73rem;margin-top:.3rem;display:none;"></div>
+        </div>
+        <div class="team-detail-actions">
+          <button id="td-set-default-btn" class="cbtn cbtn-ghost" style="width:100%;justify-content:center;" onclick="setDefaultTeam()">
+            <i class="fas fa-star"></i> Set as Default Team
+          </button>
+          <button id="td-leave-btn"  class="cbtn cbtn-danger"  style="width:100%;justify-content:center;display:none;" onclick="leaveActiveTeam()">
+            <i class="fas fa-sign-out-alt"></i> Leave Team
+          </button>
+          <button id="td-delete-btn" class="cbtn cbtn-danger"  style="width:100%;justify-content:center;display:none;" onclick="deleteActiveTeam()">
+            <i class="fas fa-trash"></i> Delete Team
+          </button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<!-- Create Team Modal -->
+<div class="modal-overlay hidden" id="create-team-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="hideTeamModal('create')"><i class="fas fa-times"></i></button>
+    <div class="modal-title"><i class="fas fa-users"></i> CREATE TEAM</div>
+    <div class="form-field" style="margin-bottom:1rem;">
+      <label class="form-label">Team Name</label>
+      <input type="text" id="create-team-name" class="cinput" placeholder="e.g. Metal Maniacs 10355" onkeydown="if(event.key==='Enter')createTeam()">
+    </div>
+    <button class="cbtn cbtn-red" style="width:100%;" onclick="createTeam()"><i class="fas fa-plus"></i> Create Team</button>
+    <div id="create-team-err" class="form-label" style="color:#f87171;margin-top:.5rem;display:none;"></div>
+  </div>
+</div>
+
+<!-- Join Team Modal -->
+<div class="modal-overlay hidden" id="join-team-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="hideTeamModal('join')"><i class="fas fa-times"></i></button>
+    <div class="modal-title"><i class="fas fa-link"></i> JOIN TEAM</div>
+    <div class="form-field" style="margin-bottom:1rem;">
+      <label class="form-label">Invite Code</label>
+      <input type="text" id="join-team-code" class="cinput" placeholder="6-character code" onkeydown="if(event.key==='Enter')joinTeam()">
+    </div>
+    <button class="cbtn cbtn-red" style="width:100%;" onclick="joinTeam()"><i class="fas fa-link"></i> Join Team</button>
+    <div id="join-team-err" class="form-label" style="color:#f87171;margin-top:.5rem;display:none;"></div>
+  </div>
+</div>
+
+<script src="/tools/competition/auth.js"></script>
+<script>
+  const DEFAULT_TEAM_KEY = 'mm_default_team'; // { id, name }
+
+  let currentUser  = null;
+  let allTeams     = [];
+  let activeTeam   = null; // full team object from /api/teams/:id
+  let activeTeamId = null; // id of the team card selected in left sidebar
+
+  // ── Init ─────────────────────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', async () => {
+    currentUser = requireAuth();
+    if (!currentUser) return;
+    document.getElementById('user-pill-label').textContent = currentUser.name;
+    document.getElementById('dash-subtitle').textContent   = `Welcome back, ${currentUser.name}`;
+    await Promise.all([loadTeams(), loadEvents()]);
+
+    // Auto-join team from email invite link (?jointeam=CODE)
+    const params = new URLSearchParams(window.location.search);
+    const joinCode = params.get('jointeam');
+    if (joinCode) {
+      history.replaceState(null, '', window.location.pathname);
+      const res  = await apiFetch('/api/teams/join', { method: 'POST', body: JSON.stringify({ code: joinCode }) });
+      const data = await res?.json();
+      if (res?.ok && data?.team_id) {
+        await loadTeams();
+        const match = allTeams.find(t => t.id === data.team_id);
+        if (match) { saveDefaultTeam(match.id, match.name); await selectTeamById(match.id); }
+      } else if (data?.error) {
+        alert('Could not join team: ' + data.error);
+      }
+    }
+  });
+
+  // ── Default team helpers ──────────────────────────────────────────────────────
+  function getDefaultTeam() {
+    try { return JSON.parse(localStorage.getItem(DEFAULT_TEAM_KEY)) || null; }
+    catch { return null; }
+  }
+  function saveDefaultTeam(id, name) {
+    localStorage.setItem(DEFAULT_TEAM_KEY, JSON.stringify({ id, name }));
+    renderDefaultTeamBar();
+  }
+  function renderDefaultTeamBar() {
+    const dt  = getDefaultTeam();
+    const bar = document.getElementById('default-team-bar');
+    const lbl = document.getElementById('default-team-bar-name');
+    if (dt) { bar.style.display = 'flex'; lbl.textContent = dt.name; }
+    else    { bar.style.display = 'none'; }
+  }
+
+  // ── Teams ─────────────────────────────────────────────────────────────────────
+  async function loadTeams() {
+    const res = await apiFetch('/api/teams');
+    if (!res) return;
+    allTeams = await res.json();
+    renderTeamsList();
+    renderDefaultTeamBar();
+
+    // Auto-select the default team if it's still in our list
+    const dt = getDefaultTeam();
+    if (dt) {
+      const match = allTeams.find(t => t.id === dt.id);
+      if (match) await selectTeamById(match.id);
+    } else if (allTeams.length === 1) {
+      // Auto-select the only team
+      await selectTeamById(allTeams[0].id);
+    }
+  }
+
+  function renderTeamsList() {
+    const el = document.getElementById('teams-list');
+    if (!allTeams.length) {
+      el.innerHTML = `<div class="team-list-empty">No teams yet.<br>
+        <button class="cbtn cbtn-red cbtn-sm" style="margin-top:.5rem;" onclick="showTeamModal('create')"><i class="fas fa-plus"></i> Create one</button>
+      </div>`;
+      return;
+    }
+    el.innerHTML = allTeams.map(t => {
+      const isOwner  = t.my_role === 'owner';
+      const isActive = t.id === activeTeamId;
+      const dt       = getDefaultTeam();
+      const isDefault = dt?.id === t.id;
+      return `<div class="team-list-item${isActive ? ' active' : ''}" onclick="selectTeamById('${t.id}')">
+        <div class="team-list-dot"></div>
+        <div style="flex:1;min-width:0;">
+          <div class="team-list-name">${escHtml(t.name)}</div>
+          <div style="font-size:.65rem;color:var(--text-muted);margin-top:.1rem;">${isOwner ? 'Owner' : 'Member'}${isDefault ? ' · <span style="color:var(--yellow);">Default</span>' : ''}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function selectTeamById(id) {
+    activeTeamId = id;
+    renderTeamsList(); // re-render to show active state immediately
+
+    const res = await apiFetch(`/api/teams/${id}`);
+    if (!res || !res.ok) return;
+    activeTeam = await res.json();
+    renderTeamDetail();
+  }
+
+  function renderTeamDetail() {
+    if (!activeTeam) {
+      document.getElementById('team-detail-empty').style.display   = 'block';
+      document.getElementById('team-detail-content').style.display = 'none';
+      return;
+    }
+    document.getElementById('team-detail-empty').style.display   = 'none';
+    document.getElementById('team-detail-content').style.display = 'block';
+
+    document.getElementById('td-name').textContent    = activeTeam.name;
+    document.getElementById('td-code').textContent    = activeTeam.invite_code;
+    document.getElementById('td-created').textContent = fmtDate(activeTeam.created_at);
+    document.getElementById('td-role').textContent    = activeTeam.is_owner ? 'Owner' : 'Member';
+
+    // Members
+    const owner   = activeTeam.owner;
+    const members = activeTeam.members || [];
+    const allMembers = [
+      { name: owner?.name || '?', email: owner?.email || '', isOwner: true, id: null },
+      ...members.map(m => ({ name: m.name || m.email || '?', email: m.email || '', isOwner: false, id: m.id }))
+    ];
+    document.getElementById('td-members').innerHTML = allMembers.slice(0, 12).map(m =>
+      `<div class="team-member-row">
+        <div class="team-member-avatar">${escHtml(m.name.slice(0,2).toUpperCase())}</div>
+        <div class="team-member-name">${escHtml(m.name)}</div>
+        ${m.isOwner
+          ? '<span style="font-size:.62rem;color:var(--yellow);margin-left:auto;flex-shrink:0;"><i class="fas fa-crown"></i></span>'
+          : (activeTeam.is_owner
+              ? `<button class="icon-btn danger" style="margin-left:auto;flex-shrink:0;" title="Remove member" onclick="removeTeamMember('${m.id}',event)"><i class="fas fa-user-xmark"></i></button>`
+              : '')}
+      </div>`
+    ).join('') + (allMembers.length > 12 ? `<div style="font-size:.72rem;color:var(--text-muted);padding:.25rem 0;">+${allMembers.length - 12} more</div>` : '');
+
+    // Invite section (owner only)
+    document.getElementById('td-invite-section').style.display = activeTeam.is_owner ? 'block' : 'none';
+
+    // Buttons
+    const dt        = getDefaultTeam();
+    const isDefault = dt?.id === activeTeam.id;
+    const setBtn    = document.getElementById('td-set-default-btn');
+    const leaveBtn  = document.getElementById('td-leave-btn');
+    const deleteBtn = document.getElementById('td-delete-btn');
+
+    setBtn.style.display    = isDefault ? 'none' : 'flex';
+    setBtn.innerHTML        = isDefault
+      ? '<i class="fas fa-star"></i> Default Team'
+      : '<i class="fas fa-star"></i> Set as Default Team';
+    leaveBtn.style.display  = activeTeam.is_owner ? 'none' : 'flex';
+    deleteBtn.style.display = activeTeam.is_owner ? 'flex' : 'none';
+  }
+
+  function setDefaultTeam() {
+    if (!activeTeam) return;
+    saveDefaultTeam(activeTeam.id, activeTeam.name);
+    renderTeamsList();
+    renderTeamDetail();
+  }
+
+  async function leaveActiveTeam() {
+    if (!activeTeam) return;
+    if (!confirm(`Leave team "${activeTeam.name}"?`)) return;
+    const res = await apiFetch(`/api/teams/${activeTeam.id}/members/me`, { method: 'DELETE' });
+    if (!res?.ok) { alert((await res?.json())?.error || 'Error leaving team.'); return; }
+    const dt = getDefaultTeam();
+    if (dt?.id === activeTeam.id) localStorage.removeItem(DEFAULT_TEAM_KEY);
+    activeTeam = null; activeTeamId = null;
+    await loadTeams();
+    renderTeamDetail();
+  }
+
+  async function deleteActiveTeam() {
+    if (!activeTeam) return;
+    if (!confirm(`Permanently delete team "${activeTeam.name}"? This cannot be undone.`)) return;
+    const res = await apiFetch(`/api/teams/${activeTeam.id}`, { method: 'DELETE' });
+    if (!res?.ok) { alert((await res?.json())?.error || 'Error deleting team.'); return; }
+    const dt = getDefaultTeam();
+    if (dt?.id === activeTeam.id) localStorage.removeItem(DEFAULT_TEAM_KEY);
+    activeTeam = null; activeTeamId = null;
+    await loadTeams();
+    renderTeamDetail();
+    renderDefaultTeamBar();
+  }
+
+  async function removeTeamMember(memberId, ev) {
+    if (ev) ev.stopPropagation();
+    if (!activeTeam || !memberId) return;
+    if (!confirm('Remove this member from the team?')) return;
+    const res = await apiFetch(`/api/teams/${activeTeam.id}/members/${memberId}`, { method: 'DELETE' });
+    if (!res?.ok) { alert((await res?.json())?.error || 'Error removing member.'); return; }
+    // Reload team detail
+    const r2 = await apiFetch(`/api/teams/${activeTeam.id}`);
+    if (r2?.ok) { activeTeam = await r2.json(); renderTeamDetail(); }
+  }
+
+  async function inviteTeamByEmail() {
+    const emailEl = document.getElementById('td-invite-email');
+    const errEl   = document.getElementById('td-invite-err');
+    const email   = emailEl.value.trim();
+    errEl.style.display = 'none';
+    if (!email) { errEl.textContent = 'Enter an email address.'; errEl.style.display = 'block'; return; }
+    const res  = await apiFetch(`/api/teams/${activeTeam.id}/invite`, { method: 'POST', body: JSON.stringify({ email }) });
+    const data = await res?.json();
+    if (res?.ok) {
+      emailEl.value = '';
+      errEl.style.display = 'none';
+      // Brief success indicator
+      const btn = emailEl.nextElementSibling;
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-check"></i>';
+      setTimeout(() => { btn.innerHTML = orig; }, 2000);
+    } else {
+      errEl.textContent = data?.error || 'Failed to send invite.';
+      errEl.style.display = 'block';
+    }
+  }
+
+  function copyInviteCode() {
+    if (!activeTeam) return;
+    navigator.clipboard.writeText(activeTeam.invite_code).then(() => {
+      const el = document.getElementById('td-code');
+      const orig = el.textContent;
+      el.textContent = 'Copied!';
+      setTimeout(() => { el.textContent = orig; }, 1500);
+    });
+  }
+
+  // ── Team modals ───────────────────────────────────────────────────────────────
+  function showTeamModal(type) {
+    document.getElementById(`${type}-team-modal`).classList.remove('hidden');
+    document.getElementById(`${type}-team-${type === 'create' ? 'name' : 'code'}`).focus();
+  }
+  function hideTeamModal(type) {
+    document.getElementById(`${type}-team-modal`).classList.add('hidden');
+    document.getElementById(`${type}-team-err`).style.display = 'none';
+  }
+
+  async function createTeam() {
+    const name = document.getElementById('create-team-name').value.trim();
+    const err  = document.getElementById('create-team-err');
+    if (!name) { err.textContent = 'Team name is required.'; err.style.display = 'block'; return; }
+    const res  = await apiFetch('/api/teams', { method: 'POST', body: JSON.stringify({ name }) });
+    const data = await res?.json();
+    if (!res?.ok) { err.textContent = data?.error || 'Error.'; err.style.display = 'block'; return; }
+    hideTeamModal('create');
+    document.getElementById('create-team-name').value = '';
+    saveDefaultTeam(data.id, data.name);
+    await loadTeams();
+    await selectTeamById(data.id);
+  }
+
+  async function joinTeam() {
+    const code = document.getElementById('join-team-code').value.trim();
+    const err  = document.getElementById('join-team-err');
+    if (!code) { err.textContent = 'Invite code is required.'; err.style.display = 'block'; return; }
+    const res  = await apiFetch('/api/teams/join', { method: 'POST', body: JSON.stringify({ code }) });
+    const data = await res?.json();
+    if (!res?.ok) { err.textContent = data?.error || 'Error.'; err.style.display = 'block'; return; }
+    hideTeamModal('join');
+    document.getElementById('join-team-code').value = '';
+    await loadTeams();
+    if (data.team_id) {
+      saveDefaultTeam(data.team_id, allTeams.find(t => t.id === data.team_id)?.name || '');
+      await selectTeamById(data.team_id);
+    }
+  }
+
+  // ── Events ────────────────────────────────────────────────────────────────────
+  async function loadEvents() {
+    const res = await apiFetch('/api/events');
+    if (!res) return;
+    const events = await res.json();
+    document.getElementById('events-loading').style.display = 'none';
+    if (!events.length) { document.getElementById('events-empty').style.display = 'flex'; return; }
+    document.getElementById('events-grid').style.display = 'grid';
+    document.getElementById('events-grid').innerHTML = events.map(e => renderEventCard(e)).join('');
+  }
+
+  function renderEventCard(e) {
+    const isOwner   = e.my_role === 'owner';
+    const roleBadge = isOwner
+      ? '<span class="badge badge-red"><i class="fas fa-crown"></i> Owner</span>'
+      : '<span class="badge badge-blue"><i class="fas fa-user"></i> Member</span>';
+    const dateStr = e.event_date ? `<span><i class="fas fa-calendar"></i> ${escHtml(e.event_date)}</span>` : '';
+    const locStr  = e.location   ? `<span><i class="fas fa-location-dot"></i> ${escHtml(e.location)}</span>` : '';
+    return `
+      <div class="event-card" onclick="window.location='/tools/competition/event/${e.id}'">
+        <div class="event-card-top">
+          <div class="event-card-badges">${roleBadge}</div>
+          ${isOwner ? `<button class="cbtn cbtn-danger cbtn-sm event-delete-btn" onclick="deleteEvent('${e.id}',event)" title="Delete event"><i class="fas fa-trash"></i></button>` : ''}
+        </div>
+        <div class="event-card-name">${escHtml(e.name)}</div>
+        <div class="event-card-team"><i class="fas fa-users"></i> ${escHtml(e.hosting_team)}</div>
+        ${e.description ? `<div class="event-card-desc">${escHtml(e.description)}</div>` : ''}
+        <div class="event-card-meta">
+          ${dateStr}${locStr}
+          <span><i class="fas fa-users-line"></i> ${e.team_count} teams</span>
+          <span><i class="fas fa-flag-checkered"></i> ${e.match_count} matches</span>
+        </div>
+        <div class="event-card-footer">
+          <span class="event-card-code"><i class="fas fa-key"></i> ${escHtml(e.invite_code)}</span>
+          <span style="color:var(--text-muted);font-size:.7rem;">OPEN →</span>
+        </div>
+      </div>`;
+  }
+
+  async function deleteEvent(id, ev) {
+    ev.stopPropagation();
+    if (!confirm('Delete this event and all its data? This cannot be undone.')) return;
+    const res = await apiFetch('/api/events/' + id, { method: 'DELETE' });
+    if (res?.ok || res?.status === 404) {
+      // 404 means already deleted — just refresh the list
+      await loadEvents();
+    } else {
+      const body = await res?.json().catch(() => ({}));
+      alert('Failed to delete event: ' + (body?.error || 'Unknown error'));
+    }
+  }
+
+  function signOutDash() {
+    clearAuth();
+    window.location.replace('/tools/competition/login');
+  }
+</script>
+</body>
+</html>
