@@ -36,7 +36,7 @@ If you want to update your changes to the main website (being hosted), then you 
 
 On the very left, their should be a series of icons. One of them looks like a merge and hovering over it will say "Source Control..."
 
-At the very top, type in your commit message/name or summary of change, then press the blue "commit" button. Then simply press the "push" button. All done!
+At the very top, type in your commit message/name or summary of change, then press the blue "commit" button. If something pops up just click yes. Then simply press the "sync changes" button. All done!
 
 ## Contact
 For questions or inquiries, visit our [Get Involved](/get-involved/) page.
